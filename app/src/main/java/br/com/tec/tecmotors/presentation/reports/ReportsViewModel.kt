@@ -80,6 +80,7 @@ class ReportsViewModel(
                 vehicleId = selected,
                 fuelRecords = refuels,
                 odometerRecords = odometers,
+                maintenanceRecords = maintenance,
                 monthsBackInclusive = 5
             )
         } else emptyList()

@@ -1,6 +1,7 @@
 package br.com.tec.tecmotors.domain.usecase
 
 import br.com.tec.tecmotors.domain.model.FuelRecord
+import br.com.tec.tecmotors.domain.model.MaintenanceRecord
 import br.com.tec.tecmotors.domain.model.MonthlyMetric
 import br.com.tec.tecmotors.domain.model.OdometerRecord
 import br.com.tec.tecmotors.domain.model.PeriodReport
@@ -98,11 +99,14 @@ class CalculateMonthlyMetricsUseCase(
         vehicleId: Long,
         fuelRecords: List<FuelRecord>,
         odometerRecords: List<OdometerRecord>,
+        maintenanceRecords: List<MaintenanceRecord> = emptyList(),
         monthsBackInclusive: Int = 5
     ): List<MonthlyMetric> {
         val nowMonth = YearMonth.now()
         return (monthsBackInclusive downTo 0).map { offset ->
             val month = nowMonth.minusMonths(offset.toLong())
+            val monthStartEpoch = month.atDay(1).toEpochDay()
+            val monthEndEpoch = month.atEndOfMonth().toEpochDay()
             val report = calculatePeriodReportUseCase(
                 vehicleId = vehicleId,
                 start = month.atDay(1),
@@ -110,9 +114,14 @@ class CalculateMonthlyMetricsUseCase(
                 fuelRecords = fuelRecords,
                 odometerRecords = odometerRecords
             )
+            val maintenanceCost = maintenanceRecords
+                .asSequence()
+                .filter { it.vehicleId == vehicleId }
+                .filter { it.createdAtEpochDay in monthStartEpoch..monthEndEpoch }
+                .sumOf { it.estimatedCost ?: 0.0 }
             MonthlyMetric(
                 monthYear = month.format(monthFormatter),
-                totalCost = report.totalCost,
+                totalCost = report.totalCost + maintenanceCost,
                 kmPerLiter = report.averageKmPerLiter,
                 distanceKm = report.distanceKm
             )

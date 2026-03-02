@@ -3,8 +3,8 @@
     <string name="google_web_client_id"></string>
 
     <string name="tab_refuels">Abastecimentos</string>
-    <string name="tab_maintenance">Manutencao</string>
-    <string name="tab_reports">Relatorios</string>
+    <string name="tab_maintenance">Manutenção</string>
+    <string name="tab_reports">Relatórios</string>
     <string name="tab_calculator">Calculadora</string>
     <string name="tab_vehicles">Veiculos</string>
 
@@ -20,7 +20,7 @@
     <string name="label_date_br">Data (DD/MM/AAAA)</string>
     <string name="label_odometer_km">Odometro (km)</string>
     <string name="action_save_odometer">Salvar odometro</string>
-    <string name="hint_odometer_month">Dica: registre no inicio e no fim do mes para melhorar a precisao dos relatorios.</string>
+    <string name="hint_odometer_month">Dica: registre no inicio e no fim do mes para melhorar a precisao dos relatórios.</string>
     <string name="text_no_odometer">Sem odometro registrado</string>
     <string name="text_last_odometer">Ultimo odometro: %1$s km</string>
 
@@ -35,16 +35,16 @@
     <string name="text_refuel_liters_price">Litros: %1$s | Preco/l: R$ %2$s</string>
     <string name="text_refuel_total">Total: %1$s</string>
 
-    <string name="title_maintenance">Manutencao preventiva</string>
+    <string name="title_maintenance">Manutenção preventiva</string>
     <string name="desc_maintenance_intro">Cadastre revisoes por data ou por quilometragem para receber alertas visuais.</string>
-    <string name="label_maintenance_title">Titulo da manutencao</string>
+    <string name="label_maintenance_title">Titulo da manutenção</string>
     <string name="label_due_date_optional">Vencimento por data (DD/MM/AAAA) - opcional</string>
     <string name="label_due_km_optional">Vencimento por odometro (km) - opcional</string>
     <string name="label_estimated_cost_optional">Custo estimado (R$) - opcional</string>
     <string name="label_notes">Observacoes</string>
-    <string name="action_save_maintenance">Salvar manutencao</string>
+    <string name="action_save_maintenance">Salvar manutenção</string>
     <string name="title_vehicle_planning">Planejamento do veiculo</string>
-    <string name="text_no_maintenance_for_vehicle">Nenhuma manutencao cadastrada para este veiculo</string>
+    <string name="text_no_maintenance_for_vehicle">Nenhuma manutenção cadastrada para este veiculo</string>
     <string name="text_type">Tipo: %1$s</string>
     <string name="text_due_date">Vence em: %1$s</string>
     <string name="text_due_km">Vence no odometro: %1$s km</string>
@@ -58,7 +58,7 @@
     <string name="action_mark_pending">Marcar como pendente</string>
     <string name="action_mark_done">Marcar como concluida</string>
 
-    <string name="title_reports">Relatorios e painel</string>
+    <string name="title_reports">Relatórios e painel</string>
     <string name="title_weekly">Semanal</string>
     <string name="title_monthly">Mensal</string>
     <string name="title_vehicle_summary">Resumo geral do veiculo</string>
@@ -66,12 +66,12 @@
     <string name="text_average_consumption">Consumo medio geral: %1$s km/l</string>
     <string name="text_cost_per_km">Custo medio por km: %1$s</string>
     <string name="text_total_fuel_cost">Gasto total combustivel: %1$s</string>
-    <string name="title_monthly_cost_chart">Gasto mensal (ultimos 6 meses)</string>
+    <string name="title_monthly_cost_chart">Gasto mensal (combustivel + manutenção)</string>
     <string name="title_monthly_consumption_chart">Consumo medio km/l (ultimos 6 meses)</string>
     <string name="title_vehicle_compare">Comparativo rapido entre veiculos</string>
     <string name="text_refuel_count">Abastecimentos: %1$d</string>
     <string name="text_fuel_total">Combustivel total: %1$s</string>
-    <string name="text_maintenance_total">Manutencao prevista/acumulada: %1$s</string>
+    <string name="text_maintenance_total">Manutenção prevista/acumulada: %1$s</string>
     <string name="action_export_csv">Exportar dados em CSV</string>
     <string name="text_period_range">%1$s ate %2$s</string>
     <string name="text_report_distance">Distancia percorrida: %1$s km</string>
@@ -133,11 +133,11 @@
     <string name="feedback_refuel_saved">Abastecimento salvo</string>
 
     <string name="feedback_select_vehicle">Selecione um veiculo</string>
-    <string name="feedback_maintenance_title_required">Informe um titulo para a manutencao</string>
+    <string name="feedback_maintenance_title_required">Informe um titulo para a manutenção</string>
     <string name="feedback_invalid_date">Data invalida</string>
     <string name="feedback_invalid_odometer_value">Odometro invalido</string>
     <string name="feedback_due_required">Informe data ou odometro para vencimento</string>
-    <string name="feedback_maintenance_saved">Manutencao cadastrada</string>
+    <string name="feedback_maintenance_saved">Manutenção cadastrada</string>
 
     <string name="feedback_export_cancelled">Exportacao cancelada</string>
     <string name="feedback_export_success">CSV exportado com sucesso</string>

@@ -2,6 +2,7 @@ package br.com.tec.tecmotors.data.local.migration
 
 import android.content.Context
 import br.com.tec.tecmotors.domain.model.FuelRecord
+import br.com.tec.tecmotors.domain.model.FuelUsageType
 import br.com.tec.tecmotors.domain.model.LocalStateSnapshot
 import br.com.tec.tecmotors.domain.model.MaintenanceRecord
 import br.com.tec.tecmotors.domain.model.MaintenanceType
@@ -72,7 +73,12 @@ class LegacyPreferencesReader(context: Context) : LegacySnapshotSource {
                 dateEpochDay = json.optLong("dateEpochDay", 0L),
                 odometerKm = json.optDouble("odometerKm", 0.0),
                 liters = json.optDouble("liters", 0.0),
-                pricePerLiter = json.optDouble("pricePerLiter", 0.0)
+                pricePerLiter = json.optDouble("pricePerLiter", 0.0),
+                stationName = json.optString("stationName", ""),
+                usageType = runCatching {
+                    FuelUsageType.valueOf(json.optString("usageType", FuelUsageType.MIXED.name))
+                }.getOrDefault(FuelUsageType.MIXED),
+                receiptImageUri = json.optStringOrNull("receiptImageUri")
             )
         }
     }
@@ -94,7 +100,8 @@ class LegacyPreferencesReader(context: Context) : LegacySnapshotSource {
                 dueDateEpochDay = json.optLongOrNull("dueDateEpochDay"),
                 dueOdometerKm = json.optDoubleOrNull("dueOdometerKm"),
                 estimatedCost = json.optDoubleOrNull("estimatedCost"),
-                done = json.optBoolean("done", false)
+                done = json.optBoolean("done", false),
+                receiptImageUri = json.optStringOrNull("receiptImageUri")
             )
         }
     }
@@ -125,4 +132,9 @@ private fun JSONObject.optLongOrNull(key: String): Long? {
 private fun JSONObject.optDoubleOrNull(key: String): Double? {
     if (!has(key) || isNull(key)) return null
     return optDouble(key)
+}
+
+private fun JSONObject.optStringOrNull(key: String): String? {
+    if (!has(key) || isNull(key)) return null
+    return optString(key)
 }

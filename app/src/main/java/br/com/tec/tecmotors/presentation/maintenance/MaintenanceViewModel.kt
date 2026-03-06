@@ -2,14 +2,15 @@ package br.com.tec.tecmotors.presentation.maintenance
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import br.com.tec.tecmotors.domain.model.MaintenanceRecord
 import br.com.tec.tecmotors.domain.model.MaintenanceType
 import br.com.tec.tecmotors.domain.usecase.AddMaintenanceUseCase
+import br.com.tec.tecmotors.domain.usecase.CalculateMaintenanceStatusUseCase
 import br.com.tec.tecmotors.domain.usecase.MaintenanceDueStatus
 import br.com.tec.tecmotors.domain.usecase.ObserveMaintenanceUseCase
 import br.com.tec.tecmotors.domain.usecase.ObserveOdometersUseCase
 import br.com.tec.tecmotors.domain.usecase.ObserveVehiclesUseCase
 import br.com.tec.tecmotors.domain.usecase.SetMaintenanceDoneUseCase
-import br.com.tec.tecmotors.domain.usecase.CalculateMaintenanceStatusUseCase
 import br.com.tec.tecmotors.presentation.common.parseDateBrOrIso
 import br.com.tec.tecmotors.presentation.common.parseDecimal
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -41,11 +42,27 @@ class MaintenanceViewModel(
             ?: vehicles.firstOrNull()?.id
             ?: -1L
 
+        val latestOdometer = odometers
+            .filter { it.vehicleId == selected }
+            .maxByOrNull { it.dateEpochDay }
+            ?.odometerKm
+
+        val kmAlerts = maintenance
+            .filter { it.vehicleId == selected }
+            .filter { !it.done }
+            .filter { it.dueOdometerKm != null && latestOdometer != null }
+            .filter {
+                val remaining = (it.dueOdometerKm ?: 0.0) - (latestOdometer ?: 0.0)
+                remaining <= 500.0
+            }
+            .sortedBy { it.dueOdometerKm ?: Double.MAX_VALUE }
+
         state.copy(
             vehicles = vehicles,
             odometerRecords = odometers,
             maintenanceRecords = maintenance,
-            selectedVehicleId = selected
+            selectedVehicleId = selected,
+            kmAlerts = kmAlerts
         )
     }.stateIn(
         scope = viewModelScope,
@@ -73,6 +90,7 @@ class MaintenanceViewModel(
             is MaintenanceUiEvent.ChangeDueKm -> localState.update { it.copy(dueKmText = event.value) }
             is MaintenanceUiEvent.ChangeEstimatedCost -> localState.update { it.copy(estimatedCostText = event.value) }
             is MaintenanceUiEvent.ChangeNotes -> localState.update { it.copy(notesText = event.value) }
+            is MaintenanceUiEvent.SetReceiptImageUri -> localState.update { it.copy(receiptImageUri = event.value) }
 
             MaintenanceUiEvent.SaveMaintenance -> saveMaintenance()
 
@@ -89,9 +107,13 @@ class MaintenanceViewModel(
     private fun saveMaintenance() {
         val state = uiState.value
 
-        val dueDate = state.dueDateText.takeIf { it.isNotBlank() }?.let(::parseDateBrOrIso)
-        val dueKm = state.dueKmText.takeIf { it.isNotBlank() }?.let(::parseDecimal)
-        val estimatedCost = state.estimatedCostText.takeIf { it.isNotBlank() }?.let(::parseDecimal)
+        val dueDateText = state.dueDateText.trim()
+        val dueKmText = state.dueKmText.trim()
+        val estimatedCostText = state.estimatedCostText.trim()
+
+        val dueDate = dueDateText.takeIf { it.isNotBlank() }?.let(::parseDateBrOrIso)
+        val dueKm = dueKmText.takeIf { it.isNotBlank() }?.let(::parseDecimal)
+        val estimatedCost = estimatedCostText.takeIf { it.isNotBlank() }?.let(::parseDecimal)
 
         if (state.selectedVehicleId <= 0L) {
             localState.update { it.copy(feedback = "Selecione um veiculo") }
@@ -101,12 +123,16 @@ class MaintenanceViewModel(
             localState.update { it.copy(feedback = "Informe um titulo para a manutencao") }
             return
         }
-        if (state.dueDateText.isNotBlank() && dueDate == null) {
+        if (dueDateText.isNotBlank() && dueDate == null) {
             localState.update { it.copy(feedback = "Data invalida") }
             return
         }
-        if (state.dueKmText.isNotBlank() && dueKm == null) {
+        if (dueKmText.isNotBlank() && (dueKm == null || dueKm <= 0.0)) {
             localState.update { it.copy(feedback = "Odometro invalido") }
+            return
+        }
+        if (estimatedCostText.isNotBlank() && (estimatedCost == null || estimatedCost < 0.0)) {
+            localState.update { it.copy(feedback = "Custo estimado invalido") }
             return
         }
         if (dueDate == null && dueKm == null) {
@@ -123,7 +149,8 @@ class MaintenanceViewModel(
                 createdAtEpochDay = LocalDate.now().toEpochDay(),
                 dueDateEpochDay = dueDate?.toEpochDay(),
                 dueOdometerKm = dueKm,
-                estimatedCost = estimatedCost
+                estimatedCost = estimatedCost,
+                receiptImageUri = state.receiptImageUri
             )
             localState.update {
                 it.copy(
@@ -131,6 +158,7 @@ class MaintenanceViewModel(
                     dueKmText = "",
                     estimatedCostText = "",
                     notesText = "",
+                    receiptImageUri = null,
                     feedback = "Manutencao cadastrada"
                 )
             }
@@ -146,7 +174,7 @@ class MaintenanceViewModel(
 
     fun maintenanceTypeLabel(type: MaintenanceType): String = type.label
 
-    fun statusOf(record: br.com.tec.tecmotors.domain.model.MaintenanceRecord): MaintenanceDueStatus {
+    fun statusOf(record: MaintenanceRecord): MaintenanceDueStatus {
         val odometer = latestOdometer(record.vehicleId)
         return calculateMaintenanceStatusUseCase(record, odometer, LocalDate.now())
     }

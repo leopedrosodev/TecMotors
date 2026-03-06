@@ -1,6 +1,7 @@
 package br.com.tec.tecmotors.domain.repository
 
 import br.com.tec.tecmotors.domain.model.FuelRecord
+import br.com.tec.tecmotors.domain.model.FuelUsageType
 import br.com.tec.tecmotors.domain.model.LocalStateSnapshot
 import br.com.tec.tecmotors.domain.model.MaintenanceRecord
 import br.com.tec.tecmotors.domain.model.MaintenanceType
@@ -8,6 +9,7 @@ import br.com.tec.tecmotors.domain.model.OdometerRecord
 import br.com.tec.tecmotors.domain.model.Settings
 import br.com.tec.tecmotors.domain.model.SyncResult
 import br.com.tec.tecmotors.domain.model.Vehicle
+import br.com.tec.tecmotors.domain.model.VehicleType
 import kotlinx.coroutines.flow.Flow
 
 interface VehicleRepository {
@@ -25,7 +27,10 @@ interface RefuelRepository {
         dateEpochDay: Long,
         odometerKm: Double,
         liters: Double,
-        pricePerLiter: Double
+        pricePerLiter: Double,
+        stationName: String,
+        usageType: FuelUsageType,
+        receiptImageUri: String?
     )
 }
 
@@ -47,7 +52,8 @@ interface MaintenanceRepository {
         createdAtEpochDay: Long,
         dueDateEpochDay: Long?,
         dueOdometerKm: Double?,
-        estimatedCost: Double?
+        estimatedCost: Double?,
+        receiptImageUri: String?
     )
 
     suspend fun setDone(recordId: Long, done: Boolean)
@@ -58,6 +64,7 @@ interface SettingsRepository {
     fun observeDarkTheme(): Flow<Boolean>
     suspend fun getSettings(): Settings
     suspend fun setDarkTheme(enabled: Boolean)
+    suspend fun setMonthlyBudget(vehicleType: VehicleType, amount: Double)
     suspend fun markLegacyImportDone()
     suspend fun touchDataUpdatedAt(timestampMillis: Long = System.currentTimeMillis())
 }

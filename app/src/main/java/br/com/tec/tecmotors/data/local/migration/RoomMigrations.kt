@@ -14,6 +14,19 @@ object RoomMigrations {
         }
     }
 
+    val MIGRATION_2_3 = object : Migration(2, 3) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            addColumnIfMissing(db, "fuel_records", "stationName", "TEXT NOT NULL DEFAULT ''")
+            addColumnIfMissing(db, "fuel_records", "usageType", "TEXT NOT NULL DEFAULT 'MIXED'")
+            addColumnIfMissing(db, "fuel_records", "receiptImageUri", "TEXT")
+
+            addColumnIfMissing(db, "maintenance_records", "receiptImageUri", "TEXT")
+
+            addColumnIfMissing(db, "settings", "monthlyBudgetCar", "REAL NOT NULL DEFAULT 0")
+            addColumnIfMissing(db, "settings", "monthlyBudgetMotorcycle", "REAL NOT NULL DEFAULT 0")
+        }
+    }
+
     private fun recreateVehicles(database: SupportSQLiteDatabase) {
         val legacy = renameIfExists(database, "vehicles")
         database.execSQL(
@@ -272,5 +285,15 @@ object RoomMigrations {
 
     private fun nullableColOr(database: SupportSQLiteDatabase, tableName: String, columnName: String): String {
         return if (hasColumn(database, tableName, columnName)) "`$columnName`" else "NULL"
+    }
+
+    private fun addColumnIfMissing(
+        database: SupportSQLiteDatabase,
+        tableName: String,
+        columnName: String,
+        columnDefinition: String
+    ) {
+        if (hasColumn(database, tableName, columnName)) return
+        database.execSQL("ALTER TABLE `$tableName` ADD COLUMN `$columnName` $columnDefinition")
     }
 }

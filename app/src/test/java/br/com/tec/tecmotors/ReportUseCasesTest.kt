@@ -4,6 +4,7 @@ import br.com.tec.tecmotors.domain.model.FuelRecord
 import br.com.tec.tecmotors.domain.model.MaintenanceRecord
 import br.com.tec.tecmotors.domain.model.MaintenanceType
 import br.com.tec.tecmotors.domain.model.OdometerRecord
+import br.com.tec.tecmotors.domain.usecase.CalculateCostPerKmMetricsUseCase
 import br.com.tec.tecmotors.domain.usecase.CalculateMonthlyMetricsUseCase
 import br.com.tec.tecmotors.domain.usecase.CalculatePeriodReportUseCase
 import br.com.tec.tecmotors.domain.usecase.CalculateVehicleSummaryUseCase
@@ -77,10 +78,12 @@ class ReportUseCasesTest {
             monthsBackInclusive = 1
         )
         val summary = CalculateVehicleSummaryUseCase()(vehicleId, fuels, odometers)
+        val costPerKm = CalculateCostPerKmMetricsUseCase()(monthlyMetrics)
 
         assertEquals(2, monthlyMetrics.size)
         assertTrue(monthlyMetrics.any { it.totalCost >= 455.0 })
         assertTrue(summary.totalCost > 0.0)
         assertTrue(summary.distanceKm >= 0.0)
+        assertEquals(2, costPerKm.size)
     }
 }

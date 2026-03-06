@@ -2,9 +2,12 @@ package br.com.tec.tecmotors.presentation.account
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import br.com.tec.tecmotors.data.JsonBackupCodec
 import br.com.tec.tecmotors.domain.model.SyncResult
 import br.com.tec.tecmotors.domain.usecase.CurrentSyncUserUseCase
 import br.com.tec.tecmotors.domain.usecase.DownloadRemoteStateUseCase
+import br.com.tec.tecmotors.domain.usecase.GetLocalSnapshotUseCase
+import br.com.tec.tecmotors.domain.usecase.RestoreLocalSnapshotUseCase
 import br.com.tec.tecmotors.domain.usecase.SignInWithGoogleUseCase
 import br.com.tec.tecmotors.domain.usecase.SignOutUseCase
 import br.com.tec.tecmotors.domain.usecase.SyncNowUseCase
@@ -20,7 +23,9 @@ class AccountSyncViewModel(
     private val uploadLocalStateUseCase: UploadLocalStateUseCase,
     private val downloadRemoteStateUseCase: DownloadRemoteStateUseCase,
     private val syncNowUseCase: SyncNowUseCase,
-    private val currentSyncUserUseCase: CurrentSyncUserUseCase
+    private val currentSyncUserUseCase: CurrentSyncUserUseCase,
+    private val getLocalSnapshotUseCase: GetLocalSnapshotUseCase,
+    private val restoreLocalSnapshotUseCase: RestoreLocalSnapshotUseCase
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(
         AccountSyncUiState(
@@ -34,16 +39,16 @@ class AccountSyncViewModel(
             is AccountSyncUiEvent.SubmitGoogleIdToken -> {
                 runBusyAction {
                     val result = signInWithGoogleUseCase(event.idToken)
-                    result.onSuccess {
+                    result.onSuccess { email ->
                         _uiState.update { state ->
                             state.copy(
-                                userEmail = it,
-                                statusMessage = "Logado como $it"
+                                userEmail = email,
+                                statusMessage = "Logado como $email"
                             )
                         }
-                    }.onFailure {
+                    }.onFailure { error ->
                         _uiState.update { state ->
-                            state.copy(statusMessage = it.message ?: "Falha no login Google.")
+                            state.copy(statusMessage = error.message ?: "Falha no login Google.")
                         }
                     }
                 }
@@ -69,20 +74,45 @@ class AccountSyncViewModel(
         }
     }
 
+    suspend fun buildBackupJson(): Result<String> {
+        return runCatching {
+            JsonBackupCodec.encode(getLocalSnapshotUseCase())
+        }
+    }
+
+    suspend fun importBackupJson(raw: String): Result<Unit> {
+        return runCatching {
+            val snapshot = JsonBackupCodec.decode(raw)
+            restoreLocalSnapshotUseCase(snapshot)
+        }.onSuccess {
+            _uiState.update { state ->
+                state.copy(statusMessage = "Backup local restaurado com sucesso.")
+            }
+        }.onFailure { error ->
+            _uiState.update { state ->
+                state.copy(statusMessage = "Falha ao restaurar backup local: ${error.message.orEmpty()}")
+            }
+        }
+    }
+
+    fun withBusy(action: suspend () -> Unit) {
+        runBusyAction(action)
+    }
+
     private fun runSyncAction(action: suspend () -> Result<SyncResult>) {
         runBusyAction {
             val result = action()
-            result.onSuccess {
+            result.onSuccess { syncResult ->
                 _uiState.update { state ->
                     state.copy(
-                        statusMessage = it.message,
+                        statusMessage = syncResult.message,
                         userEmail = currentSyncUserUseCase()
                     )
                 }
-            }.onFailure {
+            }.onFailure { error ->
                 _uiState.update { state ->
                     state.copy(
-                        statusMessage = it.message ?: "Falha na sincronizacao.",
+                        statusMessage = error.message ?: "Falha na sincronizacao.",
                         userEmail = currentSyncUserUseCase()
                     )
                 }

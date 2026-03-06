@@ -1,9 +1,13 @@
 package br.com.tec.tecmotors
 
+import br.com.tec.tecmotors.domain.model.LocalStateSnapshot
 import br.com.tec.tecmotors.domain.model.SyncResult
+import br.com.tec.tecmotors.domain.repository.SnapshotRepository
 import br.com.tec.tecmotors.domain.repository.SyncRepository
 import br.com.tec.tecmotors.domain.usecase.CurrentSyncUserUseCase
 import br.com.tec.tecmotors.domain.usecase.DownloadRemoteStateUseCase
+import br.com.tec.tecmotors.domain.usecase.GetLocalSnapshotUseCase
+import br.com.tec.tecmotors.domain.usecase.RestoreLocalSnapshotUseCase
 import br.com.tec.tecmotors.domain.usecase.SignInWithGoogleUseCase
 import br.com.tec.tecmotors.domain.usecase.SignOutUseCase
 import br.com.tec.tecmotors.domain.usecase.SyncNowUseCase
@@ -26,13 +30,16 @@ class AccountSyncViewModelTest {
     @Test
     fun submitGoogleIdToken_updatesUserAndBusyState() = runTest {
         val repository = FakeSyncRepository()
+        val snapshotRepository = FakeSnapshotRepository()
         val viewModel = AccountSyncViewModel(
             signInWithGoogleUseCase = SignInWithGoogleUseCase(repository),
             signOutUseCase = SignOutUseCase(repository),
             uploadLocalStateUseCase = UploadLocalStateUseCase(repository),
             downloadRemoteStateUseCase = DownloadRemoteStateUseCase(repository),
             syncNowUseCase = SyncNowUseCase(repository),
-            currentSyncUserUseCase = CurrentSyncUserUseCase(repository)
+            currentSyncUserUseCase = CurrentSyncUserUseCase(repository),
+            getLocalSnapshotUseCase = GetLocalSnapshotUseCase(snapshotRepository),
+            restoreLocalSnapshotUseCase = RestoreLocalSnapshotUseCase(snapshotRepository)
         )
 
         viewModel.onEvent(AccountSyncUiEvent.SubmitGoogleIdToken("token"))
@@ -70,6 +77,22 @@ class AccountSyncViewModelTest {
 
         override suspend fun syncNow(): Result<SyncResult> {
             return Result.success(SyncResult("ok", false))
+        }
+    }
+
+    private class FakeSnapshotRepository : SnapshotRepository {
+        private var snapshot = LocalStateSnapshot(
+            vehicles = emptyList(),
+            odometerRecords = emptyList(),
+            fuelRecords = emptyList(),
+            maintenanceRecords = emptyList(),
+            updatedAtMillis = 0L
+        )
+
+        override suspend fun getSnapshot(): LocalStateSnapshot = snapshot
+
+        override suspend fun restoreSnapshot(snapshot: LocalStateSnapshot) {
+            this.snapshot = snapshot
         }
     }
 }

@@ -8,18 +8,21 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import br.com.tec.tecmotors.R
 import br.com.tec.tecmotors.data.CsvExporter
@@ -93,6 +96,54 @@ fun ReportsScreen(
             onSelect = { onEvent(ReportsUiEvent.SelectVehicle(it)) }
         )
 
+        DashboardCard(
+            monthlyTotal = state.dashboardCurrentMonthTotal,
+            monthlyDistance = state.dashboardCurrentMonthDistance,
+            monthlyRefuels = state.dashboardCurrentMonthRefuels,
+            monthlyMaintenance = state.dashboardCurrentMonthMaintenance
+        )
+
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+        ) {
+            Column(
+                modifier = Modifier.padding(12.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Text(stringResource(R.string.title_monthly_budget), fontWeight = FontWeight.Bold)
+                OutlinedTextField(
+                    value = state.budgetInputText,
+                    onValueChange = { onEvent(ReportsUiEvent.ChangeBudgetInput(it)) },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                    label = { Text(stringResource(R.string.label_monthly_budget)) }
+                )
+                Button(
+                    onClick = { onEvent(ReportsUiEvent.SaveBudget) },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text(stringResource(R.string.action_save_budget))
+                }
+                if (state.budgetValue > 0.0) {
+                    val messageRes = if (state.budgetExceeded) {
+                        R.string.text_budget_exceeded
+                    } else {
+                        R.string.text_budget_remaining
+                    }
+                    Text(
+                        stringResource(messageRes, formatCurrency(kotlin.math.abs(state.budgetRemaining))),
+                        color = if (state.budgetExceeded) {
+                            MaterialTheme.colorScheme.error
+                        } else {
+                            MaterialTheme.colorScheme.primary
+                        }
+                    )
+                }
+            }
+        }
+
         PeriodReportCard(
             title = stringResource(R.string.title_weekly),
             period = stringResource(
@@ -111,6 +162,48 @@ fun ReportsScreen(
                 today.format(dateBrFormatter)
             ),
             report = state.monthlyReport
+        )
+
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+        ) {
+            Column(
+                modifier = Modifier.padding(12.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Text(stringResource(R.string.title_custom_period), fontWeight = FontWeight.Bold)
+                OutlinedTextField(
+                    value = state.customStartDateText,
+                    onValueChange = { onEvent(ReportsUiEvent.ChangeCustomStartDate(it)) },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true,
+                    label = { Text(stringResource(R.string.label_period_start)) }
+                )
+                OutlinedTextField(
+                    value = state.customEndDateText,
+                    onValueChange = { onEvent(ReportsUiEvent.ChangeCustomEndDate(it)) },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true,
+                    label = { Text(stringResource(R.string.label_period_end)) }
+                )
+                Button(
+                    onClick = { onEvent(ReportsUiEvent.ApplyCustomPeriod) },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text(stringResource(R.string.action_apply_period))
+                }
+            }
+        }
+
+        PeriodReportCard(
+            title = stringResource(R.string.title_custom_period_result),
+            period = stringResource(
+                R.string.text_period_range,
+                state.customStartDateText,
+                state.customEndDateText
+            ),
+            report = state.customReport
         )
 
         Card(
@@ -147,6 +240,17 @@ fun ReportsScreen(
                     label = it.monthYear,
                     value = it.kmPerLiter,
                     valueText = "${formatNumber(it.kmPerLiter)}"
+                )
+            }
+        )
+
+        MetricBarChart(
+            title = stringResource(R.string.title_monthly_cost_per_km_chart),
+            bars = state.costPerKmMetrics.map {
+                ChartBar(
+                    label = it.monthYear,
+                    value = it.costPerKm,
+                    valueText = shortValue(formatCurrency(it.costPerKm))
                 )
             }
         )
@@ -192,6 +296,30 @@ fun ReportsScreen(
 }
 
 @Composable
+private fun DashboardCard(
+    monthlyTotal: Double,
+    monthlyDistance: Double,
+    monthlyRefuels: Int,
+    monthlyMaintenance: Double
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+    ) {
+        Column(
+            modifier = Modifier.padding(12.dp),
+            verticalArrangement = Arrangement.spacedBy(4.dp)
+        ) {
+            Text(stringResource(R.string.title_dashboard_month), fontWeight = FontWeight.Bold)
+            Text(stringResource(R.string.text_dashboard_total, formatCurrency(monthlyTotal)))
+            Text(stringResource(R.string.text_dashboard_distance, formatNumber(monthlyDistance)))
+            Text(stringResource(R.string.text_dashboard_refuels, monthlyRefuels))
+            Text(stringResource(R.string.text_dashboard_maintenance, formatCurrency(monthlyMaintenance)))
+        }
+    }
+}
+
+@Composable
 private fun PeriodReportCard(
     title: String,
     period: String,
@@ -211,6 +339,8 @@ private fun PeriodReportCard(
             Text(stringResource(R.string.text_report_distance, formatNumber(report.distanceKm)))
             Text(stringResource(R.string.text_report_consumption, formatNumber(report.averageKmPerLiter)))
             Text(stringResource(R.string.text_report_cost, formatCurrency(report.totalCost)))
+            Text(stringResource(R.string.text_report_maintenance_cost, formatCurrency(report.maintenanceCost)))
+            Text(stringResource(R.string.text_report_total_cost, formatCurrency(report.overallCost)))
             Text(stringResource(R.string.text_report_refuels, report.refuelCount))
             Text(stringResource(R.string.text_report_liters, formatNumber(report.liters)))
         }

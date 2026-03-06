@@ -24,3 +24,4 @@ dependencyResolutionManagement {
 
 rootProject.name = "TecMotors"
 include(":app")
+include(":shared")

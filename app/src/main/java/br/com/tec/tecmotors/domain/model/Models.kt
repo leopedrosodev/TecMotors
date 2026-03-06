@@ -5,6 +5,12 @@ enum class VehicleType(val label: String) {
     MOTORCYCLE("Moto")
 }
 
+enum class FuelUsageType(val label: String) {
+    CITY("Cidade"),
+    HIGHWAY("Estrada"),
+    MIXED("Misto")
+}
+
 data class Vehicle(
     val id: Long,
     val name: String,
@@ -24,7 +30,10 @@ data class FuelRecord(
     val dateEpochDay: Long,
     val odometerKm: Double,
     val liters: Double,
-    val pricePerLiter: Double
+    val pricePerLiter: Double,
+    val stationName: String = "",
+    val usageType: FuelUsageType = FuelUsageType.MIXED,
+    val receiptImageUri: String? = null
 ) {
     val totalCost: Double = liters * pricePerLiter
 }
@@ -47,7 +56,8 @@ data class MaintenanceRecord(
     val dueDateEpochDay: Long?,
     val dueOdometerKm: Double?,
     val estimatedCost: Double?,
-    val done: Boolean
+    val done: Boolean,
+    val receiptImageUri: String? = null
 )
 
 data class PeriodReport(
@@ -56,14 +66,22 @@ data class PeriodReport(
     val averageKmPerLiter: Double,
     val totalCost: Double,
     val refuelCount: Int,
-    val averageMonthlyCost: Double
-)
+    val averageMonthlyCost: Double,
+    val maintenanceCost: Double = 0.0
+) {
+    val overallCost: Double = totalCost + maintenanceCost
+}
 
 data class MonthlyMetric(
     val monthYear: String,
     val totalCost: Double,
     val kmPerLiter: Double,
     val distanceKm: Double
+)
+
+data class CostPerKmMetric(
+    val monthYear: String,
+    val costPerKm: Double
 )
 
 data class VehicleSummary(
@@ -90,5 +108,7 @@ data class SyncResult(
 data class Settings(
     val darkThemeEnabled: Boolean,
     val legacyImportDone: Boolean,
-    val dataUpdatedAtMillis: Long
+    val dataUpdatedAtMillis: Long,
+    val monthlyBudgetCar: Double,
+    val monthlyBudgetMotorcycle: Double
 )

@@ -1,6 +1,7 @@
 package br.com.tec.tecmotors.data.remote
 
 import br.com.tec.tecmotors.domain.model.FuelRecord
+import br.com.tec.tecmotors.domain.model.FuelUsageType
 import br.com.tec.tecmotors.domain.model.LocalStateSnapshot
 import br.com.tec.tecmotors.domain.model.MaintenanceRecord
 import br.com.tec.tecmotors.domain.model.MaintenanceType
@@ -15,7 +16,7 @@ object RemoteSnapshotMapper {
     private const val FIELD_FUEL = "fuelRecords"
     private const val FIELD_MAINTENANCE = "maintenanceRecords"
     private const val FIELD_SCHEMA = "schemaVersion"
-    private const val SCHEMA_VERSION = 2L
+    private const val SCHEMA_VERSION = 3L
 
     fun toRemoteMap(snapshot: LocalStateSnapshot): Map<String, Any> {
         return mapOf(
@@ -43,7 +44,10 @@ object RemoteSnapshotMapper {
                     "dateEpochDay" to it.dateEpochDay,
                     "odometerKm" to it.odometerKm,
                     "liters" to it.liters,
-                    "pricePerLiter" to it.pricePerLiter
+                    "pricePerLiter" to it.pricePerLiter,
+                    "stationName" to it.stationName,
+                    "usageType" to it.usageType.name,
+                    "receiptImageUri" to it.receiptImageUri
                 )
             },
             FIELD_MAINTENANCE to snapshot.maintenanceRecords.map {
@@ -57,7 +61,8 @@ object RemoteSnapshotMapper {
                     "dueDateEpochDay" to it.dueDateEpochDay,
                     "dueOdometerKm" to it.dueOdometerKm,
                     "estimatedCost" to it.estimatedCost,
-                    "done" to it.done
+                    "done" to it.done,
+                    "receiptImageUri" to it.receiptImageUri
                 )
             }
         )
@@ -109,7 +114,12 @@ object RemoteSnapshotMapper {
             dateEpochDay = asLong(map["dateEpochDay"]) ?: return null,
             odometerKm = asDouble(map["odometerKm"]) ?: return null,
             liters = asDouble(map["liters"]) ?: return null,
-            pricePerLiter = asDouble(map["pricePerLiter"]) ?: return null
+            pricePerLiter = asDouble(map["pricePerLiter"]) ?: return null,
+            stationName = (map["stationName"] as? String).orEmpty(),
+            usageType = runCatching {
+                FuelUsageType.valueOf((map["usageType"] as? String) ?: FuelUsageType.MIXED.name)
+            }.getOrDefault(FuelUsageType.MIXED),
+            receiptImageUri = map["receiptImageUri"] as? String
         )
     }
 
@@ -129,7 +139,8 @@ object RemoteSnapshotMapper {
             dueDateEpochDay = asLong(map["dueDateEpochDay"]),
             dueOdometerKm = asDouble(map["dueOdometerKm"]),
             estimatedCost = asDouble(map["estimatedCost"]),
-            done = map["done"] as? Boolean ?: false
+            done = map["done"] as? Boolean ?: false,
+            receiptImageUri = map["receiptImageUri"] as? String
         )
     }
 

@@ -3,6 +3,9 @@ package br.com.tec.tecmotors.domain.usecase
 import br.com.tec.tecmotors.domain.model.MaintenanceRecord
 import br.com.tec.tecmotors.domain.model.MaintenanceType
 import br.com.tec.tecmotors.domain.repository.MaintenanceRepository
+import br.com.tec.tecmotors.shared.domain.model.SharedMaintenanceDueStatus
+import br.com.tec.tecmotors.shared.domain.model.SharedMaintenanceRecord
+import br.com.tec.tecmotors.shared.domain.usecase.CalculateSharedMaintenanceStatusUseCase
 import java.time.LocalDate
 
 enum class MaintenanceDueStatus {
@@ -29,7 +32,8 @@ class AddMaintenanceUseCase(private val repository: MaintenanceRepository) {
         createdAtEpochDay: Long,
         dueDateEpochDay: Long?,
         dueOdometerKm: Double?,
-        estimatedCost: Double?
+        estimatedCost: Double?,
+        receiptImageUri: String?
     ) {
         repository.addMaintenance(
             vehicleId = vehicleId,
@@ -39,7 +43,8 @@ class AddMaintenanceUseCase(private val repository: MaintenanceRepository) {
             createdAtEpochDay = createdAtEpochDay,
             dueDateEpochDay = dueDateEpochDay,
             dueOdometerKm = dueOdometerKm,
-            estimatedCost = estimatedCost
+            estimatedCost = estimatedCost,
+            receiptImageUri = receiptImageUri
         )
     }
 }
@@ -50,34 +55,36 @@ class SetMaintenanceDoneUseCase(private val repository: MaintenanceRepository) {
     }
 }
 
-class CalculateMaintenanceStatusUseCase {
+class CalculateMaintenanceStatusUseCase(
+    private val sharedUseCase: CalculateSharedMaintenanceStatusUseCase = CalculateSharedMaintenanceStatusUseCase()
+) {
     operator fun invoke(
         record: MaintenanceRecord,
         currentOdometerKm: Double?,
         today: LocalDate
     ): MaintenanceDueStatus {
-        if (record.done) return MaintenanceDueStatus.DONE
-
-        val todayEpoch = today.toEpochDay()
-        val dateOverdue = record.dueDateEpochDay?.let { it < todayEpoch } == true
-        val kmOverdue = record.dueOdometerKm?.let { due -> currentOdometerKm?.let { it >= due } } == true
-        if (dateOverdue || kmOverdue) return MaintenanceDueStatus.OVERDUE
-
-        val dueSoonDate = record.dueDateEpochDay?.let { due ->
-            val daysToDue = due - todayEpoch
-            daysToDue in 0..15
-        } == true
-
-        val dueSoonKm = record.dueOdometerKm?.let { due ->
-            val current = currentOdometerKm ?: return@let false
-            val remaining = due - current
-            remaining in 0.0..500.0
-        } == true
-
-        return if (dueSoonDate || dueSoonKm) {
-            MaintenanceDueStatus.DUE_SOON
-        } else {
-            MaintenanceDueStatus.ON_TRACK
-        }
+        val sharedStatus = sharedUseCase(
+            record = record.toShared(),
+            todayEpochDay = today.toEpochDay(),
+            currentOdometerKm = currentOdometerKm
+        )
+        return sharedStatus.toDomain()
     }
 }
+
+private fun MaintenanceRecord.toShared(): SharedMaintenanceRecord = SharedMaintenanceRecord(
+    vehicleId = vehicleId,
+    createdAtEpochDay = createdAtEpochDay,
+    dueDateEpochDay = dueDateEpochDay,
+    dueOdometerKm = dueOdometerKm,
+    estimatedCost = estimatedCost,
+    done = done
+)
+
+private val SharedMaintenanceDueStatus.toDomain: MaintenanceDueStatus
+    get() = when (this) {
+        SharedMaintenanceDueStatus.DONE -> MaintenanceDueStatus.DONE
+        SharedMaintenanceDueStatus.OVERDUE -> MaintenanceDueStatus.OVERDUE
+        SharedMaintenanceDueStatus.DUE_SOON -> MaintenanceDueStatus.DUE_SOON
+        SharedMaintenanceDueStatus.ON_TRACK -> MaintenanceDueStatus.ON_TRACK
+    }

@@ -47,7 +47,7 @@ object CsvExporter {
         lines += ""
 
         lines += "[ABASTECIMENTOS]"
-        lines += "id;veiculo_id;data;odometro_km;litros;preco_por_litro;total"
+        lines += "id;veiculo_id;data;odometro_km;litros;preco_por_litro;posto;uso;comprovante_uri;total"
         snapshot.fuelRecords
             .sortedBy { it.id }
             .forEach { record ->
@@ -58,13 +58,16 @@ object CsvExporter {
                     formatDecimal(record.odometerKm),
                     formatDecimal(record.liters),
                     formatDecimal(record.pricePerLiter),
+                    record.stationName,
+                    record.usageType.name,
+                    record.receiptImageUri.orEmpty(),
                     formatDecimal(record.totalCost)
                 )
             }
         lines += ""
 
         lines += "[MANUTENCAO]"
-        lines += "id;veiculo_id;tipo;titulo;observacoes;data_criacao;vencimento_data;vencimento_odometro_km;custo_estimado;concluida"
+        lines += "id;veiculo_id;tipo;titulo;observacoes;data_criacao;vencimento_data;vencimento_odometro_km;custo_estimado;concluida;comprovante_uri"
         snapshot.maintenanceRecords
             .sortedBy { it.id }
             .forEach { record ->
@@ -78,7 +81,8 @@ object CsvExporter {
                     record.dueDateEpochDay?.let(::formatEpochDay).orEmpty(),
                     record.dueOdometerKm?.let(::formatDecimal).orEmpty(),
                     record.estimatedCost?.let(::formatDecimal).orEmpty(),
-                    if (record.done) "sim" else "nao"
+                    if (record.done) "sim" else "nao",
+                    record.receiptImageUri.orEmpty()
                 )
             }
 

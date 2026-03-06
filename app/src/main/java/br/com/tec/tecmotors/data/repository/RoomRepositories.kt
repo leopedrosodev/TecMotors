@@ -1,14 +1,15 @@
 package br.com.tec.tecmotors.data.repository
 
 import androidx.room.withTransaction
-import br.com.tec.tecmotors.data.local.TecMotorsDatabase
 import br.com.tec.tecmotors.data.local.RoomSnapshotDataSource
+import br.com.tec.tecmotors.data.local.TecMotorsDatabase
 import br.com.tec.tecmotors.data.local.entity.FuelRecordEntity
 import br.com.tec.tecmotors.data.local.entity.MaintenanceRecordEntity
 import br.com.tec.tecmotors.data.local.entity.OdometerRecordEntity
 import br.com.tec.tecmotors.data.local.entity.SettingsEntity
 import br.com.tec.tecmotors.data.local.entity.VehicleEntity
 import br.com.tec.tecmotors.data.local.mapper.toDomain
+import br.com.tec.tecmotors.domain.model.FuelUsageType
 import br.com.tec.tecmotors.domain.model.LocalStateSnapshot
 import br.com.tec.tecmotors.domain.model.MaintenanceRecord
 import br.com.tec.tecmotors.domain.model.MaintenanceType
@@ -91,7 +92,10 @@ class RefuelRepositoryImpl(
         dateEpochDay: Long,
         odometerKm: Double,
         liters: Double,
-        pricePerLiter: Double
+        pricePerLiter: Double,
+        stationName: String,
+        usageType: FuelUsageType,
+        receiptImageUri: String?
     ) {
         val nextId = (database.fuelDao().maxId() ?: 0L) + 1L
         database.fuelDao().upsert(
@@ -101,7 +105,10 @@ class RefuelRepositoryImpl(
                 dateEpochDay = dateEpochDay,
                 odometerKm = odometerKm,
                 liters = liters,
-                pricePerLiter = pricePerLiter
+                pricePerLiter = pricePerLiter,
+                stationName = stationName.trim(),
+                usageType = usageType.name,
+                receiptImageUri = receiptImageUri
             )
         )
         settingsRepository.touchDataUpdatedAt()
@@ -132,7 +139,8 @@ class MaintenanceRepositoryImpl(
         createdAtEpochDay: Long,
         dueDateEpochDay: Long?,
         dueOdometerKm: Double?,
-        estimatedCost: Double?
+        estimatedCost: Double?,
+        receiptImageUri: String?
     ) {
         val nextId = (database.maintenanceDao().maxId() ?: 0L) + 1L
         database.maintenanceDao().upsert(
@@ -146,7 +154,8 @@ class MaintenanceRepositoryImpl(
                 dueDateEpochDay = dueDateEpochDay,
                 dueOdometerKm = dueOdometerKm,
                 estimatedCost = estimatedCost,
-                done = false
+                done = false,
+                receiptImageUri = receiptImageUri
             )
         )
         settingsRepository.touchDataUpdatedAt()
@@ -180,6 +189,16 @@ class SettingsRepositoryImpl(
         database.settingsDao().upsert(current.copy(darkThemeEnabled = enabled))
     }
 
+    override suspend fun setMonthlyBudget(vehicleType: VehicleType, amount: Double) {
+        val normalized = amount.coerceAtLeast(0.0)
+        val current = database.settingsDao().get() ?: defaultSettings()
+        val updated = when (vehicleType) {
+            VehicleType.CAR -> current.copy(monthlyBudgetCar = normalized)
+            VehicleType.MOTORCYCLE -> current.copy(monthlyBudgetMotorcycle = normalized)
+        }
+        database.settingsDao().upsert(updated)
+    }
+
     override suspend fun markLegacyImportDone() {
         val current = database.settingsDao().get() ?: defaultSettings()
         database.settingsDao().upsert(current.copy(legacyImportDone = true))
@@ -195,7 +214,9 @@ class SettingsRepositoryImpl(
             id = 1,
             darkThemeEnabled = true,
             legacyImportDone = false,
-            dataUpdatedAtMillis = System.currentTimeMillis()
+            dataUpdatedAtMillis = System.currentTimeMillis(),
+            monthlyBudgetCar = 0.0,
+            monthlyBudgetMotorcycle = 0.0
         )
     }
 }
@@ -218,5 +239,7 @@ class SnapshotRepositoryImpl(
 private fun SettingsEntity.toDomain(): Settings = Settings(
     darkThemeEnabled = darkThemeEnabled,
     legacyImportDone = legacyImportDone,
-    dataUpdatedAtMillis = dataUpdatedAtMillis
+    dataUpdatedAtMillis = dataUpdatedAtMillis,
+    monthlyBudgetCar = monthlyBudgetCar,
+    monthlyBudgetMotorcycle = monthlyBudgetMotorcycle
 )

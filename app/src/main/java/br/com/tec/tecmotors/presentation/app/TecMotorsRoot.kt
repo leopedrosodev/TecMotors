@@ -41,7 +41,6 @@ import br.com.tec.tecmotors.AppTopBarTitle
 import br.com.tec.tecmotors.AppVersionBadge
 import br.com.tec.tecmotors.IntroPresentationScreen
 import br.com.tec.tecmotors.R
-import br.com.tec.tecmotors.resolveGoogleClientId
 import br.com.tec.tecmotors.core.common.simpleViewModelFactory
 import br.com.tec.tecmotors.core.di.AppContainer
 import br.com.tec.tecmotors.presentation.account.AccountSyncDialog
@@ -56,6 +55,7 @@ import br.com.tec.tecmotors.presentation.reports.ReportsScreen
 import br.com.tec.tecmotors.presentation.reports.ReportsViewModel
 import br.com.tec.tecmotors.presentation.vehicles.VehiclesScreen
 import br.com.tec.tecmotors.presentation.vehicles.VehiclesViewModel
+import br.com.tec.tecmotors.resolveGoogleClientId
 import br.com.tec.tecmotors.ui.theme.TecMotorsTheme
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions
@@ -129,8 +129,11 @@ fun TecMotorsRoot(appContainer: AppContainer) {
                     observeRefuelsUseCase = appContainer.observeRefuelsUseCase,
                     observeOdometersUseCase = appContainer.observeOdometersUseCase,
                     observeMaintenanceUseCase = appContainer.observeMaintenanceUseCase,
+                    observeSettingsUseCase = appContainer.observeSettingsUseCase,
+                    setMonthlyBudgetUseCase = appContainer.setMonthlyBudgetUseCase,
                     calculatePeriodReportUseCase = appContainer.calculatePeriodReportUseCase,
                     calculateMonthlyMetricsUseCase = appContainer.calculateMonthlyMetricsUseCase,
+                    calculateCostPerKmMetricsUseCase = appContainer.calculateCostPerKmMetricsUseCase,
                     calculateVehicleSummaryUseCase = appContainer.calculateVehicleSummaryUseCase
                 )
             }
@@ -145,7 +148,9 @@ fun TecMotorsRoot(appContainer: AppContainer) {
                     uploadLocalStateUseCase = appContainer.uploadLocalStateUseCase,
                     downloadRemoteStateUseCase = appContainer.downloadRemoteStateUseCase,
                     syncNowUseCase = appContainer.syncNowUseCase,
-                    currentSyncUserUseCase = appContainer.currentSyncUserUseCase
+                    currentSyncUserUseCase = appContainer.currentSyncUserUseCase,
+                    getLocalSnapshotUseCase = appContainer.getLocalSnapshotUseCase,
+                    restoreLocalSnapshotUseCase = appContainer.restoreLocalSnapshotUseCase
                 )
             }
         }
@@ -343,7 +348,10 @@ fun TecMotorsRoot(appContainer: AppContainer) {
                             val signInClient = GoogleSignIn.getClient(context, options)
                             googleSignInLauncher.launch(signInClient.signInIntent)
                         },
-                        onEvent = accountSyncViewModel::onEvent
+                        onEvent = accountSyncViewModel::onEvent,
+                        onBuildBackupJson = { accountSyncViewModel.buildBackupJson() },
+                        onImportBackupJson = { raw -> accountSyncViewModel.importBackupJson(raw) },
+                        runBusyAction = { block -> accountSyncViewModel.withBusy(block) }
                     )
                 }
 

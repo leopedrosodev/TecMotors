@@ -1,6 +1,9 @@
 package br.com.tec.tecmotors.domain.usecase
 
+import br.com.tec.tecmotors.domain.model.LocalStateSnapshot
+import br.com.tec.tecmotors.domain.model.VehicleType
 import br.com.tec.tecmotors.domain.repository.SettingsRepository
+import br.com.tec.tecmotors.domain.repository.SnapshotRepository
 import br.com.tec.tecmotors.domain.repository.SyncRepository
 
 class ObserveDarkThemeUseCase(private val repository: SettingsRepository) {
@@ -13,6 +16,20 @@ class SetDarkThemeUseCase(private val repository: SettingsRepository) {
 
 class ObserveSettingsUseCase(private val repository: SettingsRepository) {
     operator fun invoke() = repository.observeSettings()
+}
+
+class SetMonthlyBudgetUseCase(private val repository: SettingsRepository) {
+    suspend operator fun invoke(vehicleType: VehicleType, amount: Double) {
+        repository.setMonthlyBudget(vehicleType, amount)
+    }
+}
+
+class GetLocalSnapshotUseCase(private val repository: SnapshotRepository) {
+    suspend operator fun invoke(): LocalStateSnapshot = repository.getSnapshot()
+}
+
+class RestoreLocalSnapshotUseCase(private val repository: SnapshotRepository) {
+    suspend operator fun invoke(snapshot: LocalStateSnapshot) = repository.restoreSnapshot(snapshot)
 }
 
 class SignInWithGoogleUseCase(private val repository: SyncRepository) {

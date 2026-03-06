@@ -32,7 +32,10 @@ data class FuelRecordEntity(
     val dateEpochDay: Long,
     val odometerKm: Double,
     val liters: Double,
-    val pricePerLiter: Double
+    val pricePerLiter: Double,
+    val stationName: String,
+    val usageType: String,
+    val receiptImageUri: String?
 )
 
 @Entity(
@@ -49,7 +52,8 @@ data class MaintenanceRecordEntity(
     val dueDateEpochDay: Long?,
     val dueOdometerKm: Double?,
     val estimatedCost: Double?,
-    val done: Boolean
+    val done: Boolean,
+    val receiptImageUri: String?
 )
 
 @Entity(tableName = "settings")
@@ -57,5 +61,7 @@ data class SettingsEntity(
     @PrimaryKey val id: Int = 1,
     val darkThemeEnabled: Boolean,
     val legacyImportDone: Boolean,
-    val dataUpdatedAtMillis: Long
+    val dataUpdatedAtMillis: Long,
+    val monthlyBudgetCar: Double,
+    val monthlyBudgetMotorcycle: Double
 )

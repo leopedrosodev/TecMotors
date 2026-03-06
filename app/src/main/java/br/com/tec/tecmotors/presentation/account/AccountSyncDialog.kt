@@ -1,5 +1,7 @@
 package br.com.tec.tecmotors.presentation.account
 
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -19,6 +21,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -30,8 +33,84 @@ fun AccountSyncDialog(
     state: AccountSyncUiState,
     onDismiss: () -> Unit,
     onLoginGoogle: () -> Unit,
-    onEvent: (AccountSyncUiEvent) -> Unit
+    onEvent: (AccountSyncUiEvent) -> Unit,
+    onBuildBackupJson: suspend () -> Result<String>,
+    onImportBackupJson: suspend (String) -> Result<Unit>,
+    runBusyAction: (suspend () -> Unit) -> Unit
 ) {
+    val context = LocalContext.current
+
+    val exportBackupLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.CreateDocument("application/json")
+    ) { uri ->
+        if (uri == null) {
+            onEvent(AccountSyncUiEvent.SetStatusMessage(context.getString(R.string.feedback_export_cancelled)))
+            return@rememberLauncherForActivityResult
+        }
+
+        runBusyAction {
+            onBuildBackupJson()
+                .onSuccess { raw ->
+                    runCatching {
+                        context.contentResolver.openOutputStream(uri)?.use { output ->
+                            output.write(raw.toByteArray(Charsets.UTF_8))
+                        } ?: error("Falha ao abrir destino")
+                    }.onSuccess {
+                        onEvent(AccountSyncUiEvent.SetStatusMessage(context.getString(R.string.feedback_backup_export_success)))
+                    }.onFailure {
+                        onEvent(
+                            AccountSyncUiEvent.SetStatusMessage(
+                                context.getString(R.string.feedback_backup_export_failed, it.message.orEmpty())
+                            )
+                        )
+                    }
+                }
+                .onFailure {
+                    onEvent(
+                        AccountSyncUiEvent.SetStatusMessage(
+                            context.getString(R.string.feedback_backup_export_failed, it.message.orEmpty())
+                        )
+                    )
+                }
+        }
+    }
+
+    val importBackupLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.OpenDocument()
+    ) { uri ->
+        if (uri == null) {
+            onEvent(AccountSyncUiEvent.SetStatusMessage(context.getString(R.string.feedback_export_cancelled)))
+            return@rememberLauncherForActivityResult
+        }
+
+        runBusyAction {
+            val json = runCatching {
+                context.contentResolver.openInputStream(uri)?.bufferedReader()?.use { it.readText() }
+                    ?: error("Arquivo de backup vazio")
+            }
+
+            json.onSuccess { raw ->
+                onImportBackupJson(raw)
+                    .onSuccess {
+                        onEvent(AccountSyncUiEvent.SetStatusMessage(context.getString(R.string.feedback_backup_import_success)))
+                    }
+                    .onFailure {
+                        onEvent(
+                            AccountSyncUiEvent.SetStatusMessage(
+                                context.getString(R.string.feedback_backup_import_failed, it.message.orEmpty())
+                            )
+                        )
+                    }
+            }.onFailure {
+                onEvent(
+                    AccountSyncUiEvent.SetStatusMessage(
+                        context.getString(R.string.feedback_backup_import_failed, it.message.orEmpty())
+                    )
+                )
+            }
+        }
+    }
+
     Dialog(onDismissRequest = onDismiss) {
         Card(
             modifier = Modifier.fillMaxWidth(),
@@ -102,6 +181,24 @@ fun AccountSyncDialog(
                                 }
                             }
 
+                            HorizontalSectionTitle(title = stringResource(R.string.title_local_backup))
+
+                            OutlinedButton(
+                                onClick = { exportBackupLauncher.launch("tec-motors-backup.json") },
+                                enabled = !state.busy,
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Text(stringResource(R.string.action_export_backup_json))
+                            }
+
+                            OutlinedButton(
+                                onClick = { importBackupLauncher.launch(arrayOf("application/json", "text/*")) },
+                                enabled = !state.busy,
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Text(stringResource(R.string.action_import_backup_json))
+                            }
+
                             if (state.busy) {
                                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                                     CircularProgressIndicator(modifier = Modifier.height(18.dp))
@@ -134,4 +231,13 @@ fun AccountSyncDialog(
             }
         }
     }
+}
+
+@Composable
+private fun HorizontalSectionTitle(title: String) {
+    Text(
+        text = title,
+        style = MaterialTheme.typography.titleSmall,
+        fontWeight = FontWeight.SemiBold
+    )
 }

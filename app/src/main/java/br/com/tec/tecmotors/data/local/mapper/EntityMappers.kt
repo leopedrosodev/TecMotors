@@ -6,6 +6,7 @@ import br.com.tec.tecmotors.data.local.entity.OdometerRecordEntity
 import br.com.tec.tecmotors.data.local.entity.SettingsEntity
 import br.com.tec.tecmotors.data.local.entity.VehicleEntity
 import br.com.tec.tecmotors.domain.model.FuelRecord
+import br.com.tec.tecmotors.domain.model.FuelUsageType
 import br.com.tec.tecmotors.domain.model.MaintenanceRecord
 import br.com.tec.tecmotors.domain.model.MaintenanceType
 import br.com.tec.tecmotors.domain.model.OdometerRecord
@@ -45,7 +46,10 @@ fun FuelRecordEntity.toDomain(): FuelRecord = FuelRecord(
     dateEpochDay = dateEpochDay,
     odometerKm = odometerKm,
     liters = liters,
-    pricePerLiter = pricePerLiter
+    pricePerLiter = pricePerLiter,
+    stationName = stationName,
+    usageType = runCatching { FuelUsageType.valueOf(usageType) }.getOrDefault(FuelUsageType.MIXED),
+    receiptImageUri = receiptImageUri
 )
 
 fun FuelRecord.toEntity(): FuelRecordEntity = FuelRecordEntity(
@@ -54,7 +58,10 @@ fun FuelRecord.toEntity(): FuelRecordEntity = FuelRecordEntity(
     dateEpochDay = dateEpochDay,
     odometerKm = odometerKm,
     liters = liters,
-    pricePerLiter = pricePerLiter
+    pricePerLiter = pricePerLiter,
+    stationName = stationName,
+    usageType = usageType.name,
+    receiptImageUri = receiptImageUri
 )
 
 fun MaintenanceRecordEntity.toDomain(): MaintenanceRecord = MaintenanceRecord(
@@ -67,7 +74,8 @@ fun MaintenanceRecordEntity.toDomain(): MaintenanceRecord = MaintenanceRecord(
     dueDateEpochDay = dueDateEpochDay,
     dueOdometerKm = dueOdometerKm,
     estimatedCost = estimatedCost,
-    done = done
+    done = done,
+    receiptImageUri = receiptImageUri
 )
 
 fun MaintenanceRecord.toEntity(): MaintenanceRecordEntity = MaintenanceRecordEntity(
@@ -80,18 +88,23 @@ fun MaintenanceRecord.toEntity(): MaintenanceRecordEntity = MaintenanceRecordEnt
     dueDateEpochDay = dueDateEpochDay,
     dueOdometerKm = dueOdometerKm,
     estimatedCost = estimatedCost,
-    done = done
+    done = done,
+    receiptImageUri = receiptImageUri
 )
 
 fun SettingsEntity.toDomain(): Settings = Settings(
     darkThemeEnabled = darkThemeEnabled,
     legacyImportDone = legacyImportDone,
-    dataUpdatedAtMillis = dataUpdatedAtMillis
+    dataUpdatedAtMillis = dataUpdatedAtMillis,
+    monthlyBudgetCar = monthlyBudgetCar,
+    monthlyBudgetMotorcycle = monthlyBudgetMotorcycle
 )
 
 fun Settings.toEntity(): SettingsEntity = SettingsEntity(
     id = 1,
     darkThemeEnabled = darkThemeEnabled,
     legacyImportDone = legacyImportDone,
-    dataUpdatedAtMillis = dataUpdatedAtMillis
+    dataUpdatedAtMillis = dataUpdatedAtMillis,
+    monthlyBudgetCar = monthlyBudgetCar,
+    monthlyBudgetMotorcycle = monthlyBudgetMotorcycle
 )

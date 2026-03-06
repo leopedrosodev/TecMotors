@@ -13,8 +13,12 @@ import android.os.Build
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
+import androidx.room.Room
 import br.com.tec.tecmotors.MainActivity
 import br.com.tec.tecmotors.R
+import br.com.tec.tecmotors.data.local.TecMotorsDatabase
+import br.com.tec.tecmotors.data.local.migration.RoomMigrations
+import kotlinx.coroutines.runBlocking
 import java.time.LocalDate
 import java.util.Calendar
 
@@ -53,14 +57,7 @@ object ReminderScheduler {
         val isStartOfMonth = now.dayOfMonth == 1
         val isEndOfMonth = now.dayOfMonth == now.lengthOfMonth()
         if (!isStartOfMonth && !isEndOfMonth) return
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            val hasPermission = ContextCompat.checkSelfPermission(
-                context,
-                Manifest.permission.POST_NOTIFICATIONS
-            ) == PackageManager.PERMISSION_GRANTED
-            if (!hasPermission) return
-        }
+        if (!hasNotificationPermission(context)) return
 
         createChannel(context)
 
@@ -76,6 +73,65 @@ object ReminderScheduler {
             context.getString(R.string.notif_text_month_end)
         }
 
+        val notification = baseNotificationBuilder(context)
+            .setContentTitle(title)
+            .setContentText(text)
+            .setStyle(NotificationCompat.BigTextStyle().bigText(text))
+            .build()
+
+        NotificationManagerCompat.from(context)
+            .notify(now.toEpochDay().toInt(), notification)
+    }
+
+    fun publishMaintenanceKmReminderIfNeeded(context: Context, now: LocalDate = LocalDate.now()) {
+        if (!hasNotificationPermission(context)) return
+
+        val database = buildReminderDb(context)
+        val (maintenance, odometers) = runBlocking {
+            val maint = database.maintenanceDao().getAll()
+            val odo = database.odometerDao().getAll()
+            maint to odo
+        }
+        database.close()
+
+        val latestByVehicle = odometers
+            .groupBy { it.vehicleId }
+            .mapValues { (_, records) -> records.maxByOrNull { it.dateEpochDay }?.odometerKm ?: 0.0 }
+
+        val dueSoon = maintenance
+            .filter { !it.done && it.dueOdometerKm != null }
+            .mapNotNull { record ->
+                val dueKm = record.dueOdometerKm ?: return@mapNotNull null
+                val current = latestByVehicle[record.vehicleId] ?: return@mapNotNull null
+                val remaining = dueKm - current
+                if (remaining <= 500.0) {
+                    record.title to remaining
+                } else {
+                    null
+                }
+            }
+            .sortedBy { it.second }
+
+        if (dueSoon.isEmpty()) return
+
+        createChannel(context)
+        val preview = dueSoon.take(2).joinToString(" | ") { (title, remaining) ->
+            val km = kotlin.math.max(remaining, 0.0)
+            "$title (${km.toInt()} km)"
+        }
+        val text = context.getString(R.string.notif_text_maintenance_km, preview)
+
+        val notification = baseNotificationBuilder(context)
+            .setContentTitle(context.getString(R.string.notif_title_maintenance_km))
+            .setContentText(text)
+            .setStyle(NotificationCompat.BigTextStyle().bigText(text))
+            .build()
+
+        NotificationManagerCompat.from(context)
+            .notify((now.toEpochDay().toInt() + 50000), notification)
+    }
+
+    private fun baseNotificationBuilder(context: Context): NotificationCompat.Builder {
         val openAppIntent = Intent(context, MainActivity::class.java)
         val openAppPendingIntent = PendingIntent.getActivity(
             context,
@@ -84,18 +140,30 @@ object ReminderScheduler {
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
-        val notification = NotificationCompat.Builder(context, CHANNEL_ID)
+        return NotificationCompat.Builder(context, CHANNEL_ID)
             .setSmallIcon(R.mipmap.ic_launcher)
-            .setContentTitle(title)
-            .setContentText(text)
-            .setStyle(NotificationCompat.BigTextStyle().bigText(text))
             .setPriority(NotificationCompat.PRIORITY_DEFAULT)
             .setAutoCancel(true)
             .setContentIntent(openAppPendingIntent)
-            .build()
+    }
 
-        NotificationManagerCompat.from(context)
-            .notify(now.toEpochDay().toInt(), notification)
+    private fun hasNotificationPermission(context: Context): Boolean {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) return true
+        return ContextCompat.checkSelfPermission(
+            context,
+            Manifest.permission.POST_NOTIFICATIONS
+        ) == PackageManager.PERMISSION_GRANTED
+    }
+
+    private fun buildReminderDb(context: Context): TecMotorsDatabase {
+        return Room.databaseBuilder(
+            context.applicationContext,
+            TecMotorsDatabase::class.java,
+            "tec_motors.db"
+        ).addMigrations(
+            RoomMigrations.MIGRATION_1_2,
+            RoomMigrations.MIGRATION_2_3
+        ).build()
     }
 
     private fun createChannel(context: Context) {
@@ -127,6 +195,7 @@ object ReminderScheduler {
 class ReminderReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent?) {
         ReminderScheduler.publishMonthlyReminderIfNeeded(context)
+        ReminderScheduler.publishMaintenanceKmReminderIfNeeded(context)
     }
 }
 

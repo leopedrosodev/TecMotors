@@ -10,7 +10,7 @@ App Android nativo para controle de carro e moto, com foco em:
 - lembretes no inicio e fim do mes
 - login Google + sincronizacao na nuvem (opcional)
 
-Versao atual: `1.2.2 (7)`
+Versao atual: `1.3.0 (8)`
 
 ## Stack
 - Kotlin

@@ -1,6 +1,7 @@
 package br.com.tec.tecmotors
 
 import br.com.tec.tecmotors.data.remote.RemoteSnapshotMapper
+import br.com.tec.tecmotors.domain.model.FuelUsageType
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -35,6 +36,7 @@ class RemoteSnapshotMapperTest {
         assertEquals(1, snapshot.odometerRecords.size)
         assertEquals(1, snapshot.fuelRecords.size)
         assertTrue(snapshot.maintenanceRecords.isEmpty())
+        assertEquals(FuelUsageType.MIXED, snapshot.fuelRecords.first().usageType)
         assertEquals(1000L, snapshot.updatedAtMillis)
     }
 }

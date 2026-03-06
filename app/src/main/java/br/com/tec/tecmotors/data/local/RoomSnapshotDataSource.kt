@@ -36,7 +36,9 @@ class RoomSnapshotDataSource(
                 id = 1,
                 darkThemeEnabled = true,
                 legacyImportDone = true,
-                dataUpdatedAtMillis = snapshot.updatedAtMillis
+                dataUpdatedAtMillis = snapshot.updatedAtMillis,
+                monthlyBudgetCar = 0.0,
+                monthlyBudgetMotorcycle = 0.0
             )
 
             database.settingsDao().upsert(

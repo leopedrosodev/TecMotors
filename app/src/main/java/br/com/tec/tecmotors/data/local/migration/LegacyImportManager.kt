@@ -32,7 +32,9 @@ class LegacyImportManager(
                 id = 1,
                 darkThemeEnabled = reader.readDarkThemeEnabled(),
                 legacyImportDone = false,
-                dataUpdatedAtMillis = snapshot.updatedAtMillis.takeIf { it > 0L } ?: System.currentTimeMillis()
+                dataUpdatedAtMillis = snapshot.updatedAtMillis.takeIf { it > 0L } ?: System.currentTimeMillis(),
+                monthlyBudgetCar = 0.0,
+                monthlyBudgetMotorcycle = 0.0
             )
 
             settingsDao.upsert(

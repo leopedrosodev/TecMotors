@@ -1,5 +1,9 @@
 package br.com.tec.tecmotors.presentation.maintenance
 
+import android.content.Intent
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -7,7 +11,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AssistChip
@@ -17,12 +20,14 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
@@ -42,6 +47,21 @@ fun MaintenanceScreen(
     viewModel: MaintenanceViewModel,
     onEvent: (MaintenanceUiEvent) -> Unit
 ) {
+    val context = LocalContext.current
+    val receiptPicker = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.OpenDocument()
+    ) { uri ->
+        if (uri != null) {
+            runCatching {
+                context.contentResolver.takePersistableUriPermission(
+                    uri,
+                    Intent.FLAG_GRANT_READ_URI_PERMISSION
+                )
+            }
+            onEvent(MaintenanceUiEvent.SetReceiptImageUri(uri.toString()))
+        }
+    }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -60,6 +80,24 @@ fun MaintenanceScreen(
             selectedVehicleId = state.selectedVehicleId,
             onSelect = { onEvent(MaintenanceUiEvent.SelectVehicle(it)) }
         )
+
+        if (state.kmAlerts.isNotEmpty()) {
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer)
+            ) {
+                Column(
+                    modifier = Modifier.padding(12.dp),
+                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    Text(stringResource(R.string.title_km_alerts), fontWeight = FontWeight.Bold)
+                    state.kmAlerts.take(3).forEach { alert ->
+                        val dueKm = alert.dueOdometerKm ?: 0.0
+                        Text(stringResource(R.string.text_km_alert_row, alert.title, formatNumber(dueKm)))
+                    }
+                }
+            }
+        }
 
         Row(
             modifier = Modifier.horizontalScroll(rememberScrollState()),
@@ -110,6 +148,21 @@ fun MaintenanceScreen(
             modifier = Modifier.fillMaxWidth(),
             label = { Text(stringResource(R.string.label_notes)) }
         )
+
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            OutlinedButton(onClick = { receiptPicker.launch(arrayOf("image/*")) }) {
+                Text(stringResource(R.string.action_attach_receipt))
+            }
+            if (state.receiptImageUri != null) {
+                OutlinedButton(onClick = { onEvent(MaintenanceUiEvent.SetReceiptImageUri(null)) }) {
+                    Text(stringResource(R.string.action_remove_attachment))
+                }
+            }
+        }
+
+        state.receiptImageUri?.let {
+            Text(stringResource(R.string.text_attachment_added))
+        }
 
         Button(
             onClick = { onEvent(MaintenanceUiEvent.SaveMaintenance) },
@@ -188,6 +241,9 @@ private fun MaintenanceCard(
             record.estimatedCost?.let { Text(stringResource(R.string.text_estimated_cost, formatCurrency(it))) }
             if (record.notes.isNotBlank()) {
                 Text(stringResource(R.string.text_notes, record.notes))
+            }
+            if (record.receiptImageUri != null) {
+                Text(stringResource(R.string.text_attachment_added))
             }
 
             Text(

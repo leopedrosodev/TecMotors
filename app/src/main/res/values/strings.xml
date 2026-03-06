@@ -6,7 +6,7 @@
     <string name="tab_maintenance">Manutenção</string>
     <string name="tab_reports">Relatórios</string>
     <string name="tab_calculator">Calculadora</string>
-    <string name="tab_vehicles">Veiculos</string>
+    <string name="tab_vehicles">Veículos</string>
 
     <string name="content_desc_account_sync">Conta e sincronizacao</string>
     <string name="content_desc_theme_light">Mudar para tema claro</string>
@@ -28,12 +28,21 @@
     <string name="desc_refuels_intro">Escolha o veiculo e registre os dados do abastecimento.</string>
     <string name="label_liters">Litros abastecidos</string>
     <string name="label_price_per_liter">Preco por litro (R$)</string>
+    <string name="label_station_optional">Posto (opcional)</string>
     <string name="action_save_refuel">Salvar abastecimento</string>
     <string name="title_latest_refuels">Ultimos abastecimentos</string>
     <string name="text_no_refuels">Nenhum abastecimento registrado ainda</string>
     <string name="text_refuel_odometer">Odometro: %1$s km</string>
     <string name="text_refuel_liters_price">Litros: %1$s | Preco/l: R$ %2$s</string>
     <string name="text_refuel_total">Total: %1$s</string>
+    <string name="title_station_history">Historico de postos</string>
+    <string name="text_station_suggestion">Sugestao de economia: %1$s</string>
+    <string name="text_station_history_row">%1$s - media R$ %2$s (%3$d abastecimentos)</string>
+    <string name="text_station_label">Posto: %1$s</string>
+    <string name="text_usage_label">Uso: %1$s</string>
+    <string name="action_attach_receipt">Anexar comprovante</string>
+    <string name="action_remove_attachment">Remover anexo</string>
+    <string name="text_attachment_added">Comprovante anexado</string>
 
     <string name="title_maintenance">Manutenção preventiva</string>
     <string name="desc_maintenance_intro">Cadastre revisoes por data ou por quilometragem para receber alertas visuais.</string>
@@ -44,6 +53,8 @@
     <string name="label_notes">Observacoes</string>
     <string name="action_save_maintenance">Salvar manutenção</string>
     <string name="title_vehicle_planning">Planejamento do veiculo</string>
+    <string name="title_km_alerts">Alertas por quilometragem</string>
+    <string name="text_km_alert_row">%1$s - vence em %2$s km</string>
     <string name="text_no_maintenance_for_vehicle">Nenhuma manutenção cadastrada para este veiculo</string>
     <string name="text_type">Tipo: %1$s</string>
     <string name="text_due_date">Vence em: %1$s</string>
@@ -61,6 +72,21 @@
     <string name="title_reports">Relatórios e painel</string>
     <string name="title_weekly">Semanal</string>
     <string name="title_monthly">Mensal</string>
+    <string name="title_custom_period">Periodo personalizado</string>
+    <string name="title_custom_period_result">Resultado personalizado</string>
+    <string name="label_period_start">Inicio (DD/MM/AAAA)</string>
+    <string name="label_period_end">Fim (DD/MM/AAAA)</string>
+    <string name="action_apply_period">Aplicar periodo</string>
+    <string name="title_monthly_budget">Orcamento mensal por veiculo</string>
+    <string name="label_monthly_budget">Orcamento mensal (R$)</string>
+    <string name="action_save_budget">Salvar orcamento</string>
+    <string name="text_budget_exceeded">Orcamento estourado em %1$s</string>
+    <string name="text_budget_remaining">Saldo do orcamento: %1$s</string>
+    <string name="title_dashboard_month">Dashboard do mes</string>
+    <string name="text_dashboard_total">Gasto total (combustivel + manutenção): %1$s</string>
+    <string name="text_dashboard_distance">Distancia no mes: %1$s km</string>
+    <string name="text_dashboard_refuels">Abastecimentos no mes: %1$d</string>
+    <string name="text_dashboard_maintenance">Manutenção no mes: %1$s</string>
     <string name="title_vehicle_summary">Resumo geral do veiculo</string>
     <string name="text_total_distance">Distancia total: %1$s km</string>
     <string name="text_average_consumption">Consumo medio geral: %1$s km/l</string>
@@ -68,6 +94,7 @@
     <string name="text_total_fuel_cost">Gasto total combustivel: %1$s</string>
     <string name="title_monthly_cost_chart">Gasto mensal (combustivel + manutenção)</string>
     <string name="title_monthly_consumption_chart">Consumo medio km/l (ultimos 6 meses)</string>
+    <string name="title_monthly_cost_per_km_chart">Tendencia de custo por km (R$/km)</string>
     <string name="title_vehicle_compare">Comparativo rapido entre veiculos</string>
     <string name="text_refuel_count">Abastecimentos: %1$d</string>
     <string name="text_fuel_total">Combustivel total: %1$s</string>
@@ -77,6 +104,8 @@
     <string name="text_report_distance">Distancia percorrida: %1$s km</string>
     <string name="text_report_consumption">Consumo de combustivel: %1$s km/l</string>
     <string name="text_report_cost">Gasto de combustivel: %1$s</string>
+    <string name="text_report_maintenance_cost">Gasto de manutenção: %1$s</string>
+    <string name="text_report_total_cost">Gasto total do periodo: %1$s</string>
     <string name="text_report_refuels">Quantidade de abastecimentos: %1$d</string>
     <string name="text_report_liters">Litros abastecidos: %1$s l</string>
     <string name="text_no_chart_data">Sem dados suficientes</string>
@@ -105,6 +134,9 @@
     <string name="action_sync_now">Sincronizar agora</string>
     <string name="action_upload_cloud">Enviar para nuvem</string>
     <string name="action_download_cloud">Baixar da nuvem</string>
+    <string name="title_local_backup">Backup local (JSON)</string>
+    <string name="action_export_backup_json">Exportar backup JSON</string>
+    <string name="action_import_backup_json">Importar backup JSON</string>
     <string name="text_processing">Processando...</string>
     <string name="text_sync_conflict_hint">Conflito simples: o snapshot com timestamp mais recente vence (local ou nuvem).</string>
     <string name="action_close">Fechar</string>
@@ -119,6 +151,8 @@
     <string name="notif_title_month_end">Fim do mes</string>
     <string name="notif_text_month_start">Registre o odometro inicial dos seus veiculos para acompanhar as medias.</string>
     <string name="notif_text_month_end">Registre o odometro final para fechar suas medias do mes.</string>
+    <string name="notif_title_maintenance_km">Alerta de manutenção por km</string>
+    <string name="notif_text_maintenance_km">Revisoes proximas do vencimento: %1</string>
 
     <string name="feedback_login_cancelled">Login Google cancelado.</string>
     <string name="feedback_login_failed">Falha ao obter conta Google: %1$s</string>
@@ -142,6 +176,10 @@
     <string name="feedback_export_cancelled">Exportacao cancelada</string>
     <string name="feedback_export_success">CSV exportado com sucesso</string>
     <string name="feedback_export_failed">Falha ao exportar CSV: %1$s</string>
+    <string name="feedback_backup_export_success">Backup local exportado com sucesso</string>
+    <string name="feedback_backup_export_failed">Falha ao exportar backup local: %1$s</string>
+    <string name="feedback_backup_import_success">Backup local importado com sucesso</string>
+    <string name="feedback_backup_import_failed">Falha ao importar backup local: %1$s</string>
 
     <string name="feedback_signed_in">Logado como %1$s</string>
     <string name="feedback_signed_out">Sessao encerrada.</string>

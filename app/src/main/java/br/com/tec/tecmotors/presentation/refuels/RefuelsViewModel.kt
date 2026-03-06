@@ -32,10 +32,30 @@ class RefuelsViewModel(
             ?: vehicles.firstOrNull()?.id
             ?: -1L
 
+        val selectedVehicleRefuels = refuels.filter { it.vehicleId == selected }
+        val stationInsights = selectedVehicleRefuels
+            .asSequence()
+            .map { it.stationName.trim() to it.pricePerLiter }
+            .filter { it.first.isNotBlank() }
+            .groupBy({ it.first }, { it.second })
+            .map { (station, prices) ->
+                StationInsight(
+                    stationName = station,
+                    averagePrice = prices.average(),
+                    timesUsed = prices.size
+                )
+            }
+            .sortedBy { it.averagePrice }
+            .toList()
+
+        val suggested = stationInsights.firstOrNull()?.stationName
+
         state.copy(
             vehicles = vehicles,
             fuelRecords = refuels,
-            selectedVehicleId = selected
+            selectedVehicleId = selected,
+            stationInsights = stationInsights,
+            suggestedStationName = suggested
         )
     }.stateIn(
         scope = viewModelScope,
@@ -50,6 +70,9 @@ class RefuelsViewModel(
             is RefuelsUiEvent.ChangeOdometer -> localState.update { it.copy(odometerText = event.value) }
             is RefuelsUiEvent.ChangeLiters -> localState.update { it.copy(litersText = event.value) }
             is RefuelsUiEvent.ChangePrice -> localState.update { it.copy(priceText = event.value) }
+            is RefuelsUiEvent.ChangeStation -> localState.update { it.copy(stationText = event.value) }
+            is RefuelsUiEvent.SelectUsageType -> localState.update { it.copy(selectedUsageType = event.value) }
+            is RefuelsUiEvent.SetReceiptImageUri -> localState.update { it.copy(receiptImageUri = event.value) }
 
             RefuelsUiEvent.SaveRefuel -> {
                 val state = uiState.value
@@ -69,13 +92,17 @@ class RefuelsViewModel(
                         dateEpochDay = date.toEpochDay(),
                         odometerKm = odometer,
                         liters = liters,
-                        pricePerLiter = price
+                        pricePerLiter = price,
+                        stationName = state.stationText,
+                        usageType = state.selectedUsageType,
+                        receiptImageUri = state.receiptImageUri
                     )
                     localState.update {
                         it.copy(
                             odometerText = "",
                             litersText = "",
                             priceText = "",
+                            receiptImageUri = null,
                             feedback = "Abastecimento salvo"
                         )
                     }

@@ -13,6 +13,7 @@ sealed interface MaintenanceUiEvent {
     data class ChangeDueKm(val value: String) : MaintenanceUiEvent
     data class ChangeEstimatedCost(val value: String) : MaintenanceUiEvent
     data class ChangeNotes(val value: String) : MaintenanceUiEvent
+    data class SetReceiptImageUri(val value: String?) : MaintenanceUiEvent
     data object SaveMaintenance : MaintenanceUiEvent
     data class ToggleDone(val recordId: Long, val done: Boolean) : MaintenanceUiEvent
     data object ClearFeedback : MaintenanceUiEvent
@@ -29,5 +30,7 @@ data class MaintenanceUiState(
     val dueKmText: String = "",
     val estimatedCostText: String = "",
     val notesText: String = "",
+    val receiptImageUri: String? = null,
+    val kmAlerts: List<MaintenanceRecord> = emptyList(),
     val feedback: String? = null
 )

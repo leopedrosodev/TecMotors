@@ -116,7 +116,8 @@ fun TecMotorsRoot(appContainer: AppContainer) {
                     observeMaintenanceUseCase = appContainer.observeMaintenanceUseCase,
                     addMaintenanceUseCase = appContainer.addMaintenanceUseCase,
                     setMaintenanceDoneUseCase = appContainer.setMaintenanceDoneUseCase,
-                    calculateMaintenanceStatusUseCase = appContainer.calculateMaintenanceStatusUseCase
+                    calculateMaintenanceStatusUseCase = appContainer.calculateMaintenanceStatusUseCase,
+                    calculateComponentHealthUseCase = appContainer.calculateComponentHealthUseCase
                 )
             }
         }

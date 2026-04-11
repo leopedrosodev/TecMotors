@@ -25,10 +25,12 @@ import java.util.Calendar
 object ReminderScheduler {
     private const val CHANNEL_ID = "tec_motors_reminders"
     private const val ALARM_REQUEST_CODE = 42010
+    private const val ODOMETER_ALARM_REQUEST_CODE = 42011
 
     fun initialize(context: Context) {
         createChannel(context)
         scheduleDailyCheck(context)
+        scheduleOdometerReminder(context)
     }
 
     fun scheduleDailyCheck(context: Context) {
@@ -51,6 +53,44 @@ object ReminderScheduler {
             AlarmManager.INTERVAL_DAY,
             pendingIntent
         )
+    }
+
+    fun scheduleOdometerReminder(context: Context) {
+        val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as? AlarmManager ?: return
+        val pendingIntent = odometerReminderPendingIntent(context)
+
+        val trigger = Calendar.getInstance().apply {
+            set(Calendar.HOUR_OF_DAY, 19)
+            set(Calendar.MINUTE, 30)
+            set(Calendar.SECOND, 0)
+            set(Calendar.MILLISECOND, 0)
+            if (timeInMillis <= System.currentTimeMillis()) {
+                add(Calendar.DAY_OF_MONTH, 1)
+            }
+        }.timeInMillis
+
+        alarmManager.setInexactRepeating(
+            AlarmManager.RTC_WAKEUP,
+            trigger,
+            AlarmManager.INTERVAL_DAY,
+            pendingIntent
+        )
+    }
+
+    fun publishOdometerReminder(context: Context) {
+        if (!hasNotificationPermission(context)) return
+        createChannel(context)
+
+        val notification = baseNotificationBuilder(context)
+            .setContentTitle(context.getString(R.string.notif_title_odometer_daily))
+            .setContentText(context.getString(R.string.notif_text_odometer_daily))
+            .setStyle(
+                NotificationCompat.BigTextStyle()
+                    .bigText(context.getString(R.string.notif_text_odometer_daily))
+            )
+            .build()
+
+        NotificationManagerCompat.from(context).notify(99001, notification)
     }
 
     fun publishMonthlyReminderIfNeeded(context: Context, now: LocalDate = LocalDate.now()) {
@@ -190,12 +230,28 @@ object ReminderScheduler {
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
     }
+
+    private fun odometerReminderPendingIntent(context: Context): PendingIntent {
+        val intent = Intent(context, OdometerReminderReceiver::class.java)
+        return PendingIntent.getBroadcast(
+            context,
+            ODOMETER_ALARM_REQUEST_CODE,
+            intent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+    }
 }
 
 class ReminderReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent?) {
         ReminderScheduler.publishMonthlyReminderIfNeeded(context)
         ReminderScheduler.publishMaintenanceKmReminderIfNeeded(context)
+    }
+}
+
+class OdometerReminderReceiver : BroadcastReceiver() {
+    override fun onReceive(context: Context, intent: Intent?) {
+        ReminderScheduler.publishOdometerReminder(context)
     }
 }
 

@@ -81,6 +81,13 @@ fun MaintenanceScreen(
             onSelect = { onEvent(MaintenanceUiEvent.SelectVehicle(it)) }
         )
 
+        state.vehicleHealthIndex?.let { healthIndex ->
+            if (healthIndex.components.any { it.hasData }) {
+                ComponentsDashboard(healthIndex = healthIndex, modifier = Modifier.fillMaxWidth())
+                HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
+            }
+        }
+
         if (state.kmAlerts.isNotEmpty()) {
             Card(
                 modifier = Modifier.fillMaxWidth(),

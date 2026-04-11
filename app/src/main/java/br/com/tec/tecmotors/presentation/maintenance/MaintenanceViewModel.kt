@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import br.com.tec.tecmotors.domain.model.MaintenanceRecord
 import br.com.tec.tecmotors.domain.model.MaintenanceType
 import br.com.tec.tecmotors.domain.usecase.AddMaintenanceUseCase
+import br.com.tec.tecmotors.domain.usecase.CalculateComponentHealthUseCase
 import br.com.tec.tecmotors.domain.usecase.CalculateMaintenanceStatusUseCase
 import br.com.tec.tecmotors.domain.usecase.MaintenanceDueStatus
 import br.com.tec.tecmotors.domain.usecase.ObserveMaintenanceUseCase
@@ -28,7 +29,8 @@ class MaintenanceViewModel(
     private val observeMaintenanceUseCase: ObserveMaintenanceUseCase,
     private val addMaintenanceUseCase: AddMaintenanceUseCase,
     private val setMaintenanceDoneUseCase: SetMaintenanceDoneUseCase,
-    private val calculateMaintenanceStatusUseCase: CalculateMaintenanceStatusUseCase
+    private val calculateMaintenanceStatusUseCase: CalculateMaintenanceStatusUseCase,
+    private val calculateComponentHealthUseCase: CalculateComponentHealthUseCase
 ) : ViewModel() {
     private val localState = MutableStateFlow(MaintenanceUiState())
 
@@ -57,12 +59,20 @@ class MaintenanceViewModel(
             }
             .sortedBy { it.dueOdometerKm ?: Double.MAX_VALUE }
 
+        val healthIndex = calculateComponentHealthUseCase(
+            vehicleId = selected,
+            maintenanceRecords = maintenance,
+            currentOdometerKm = latestOdometer,
+            today = LocalDate.now()
+        )
+
         state.copy(
             vehicles = vehicles,
             odometerRecords = odometers,
             maintenanceRecords = maintenance,
             selectedVehicleId = selected,
-            kmAlerts = kmAlerts
+            kmAlerts = kmAlerts,
+            vehicleHealthIndex = healthIndex
         )
     }.stateIn(
         scope = viewModelScope,

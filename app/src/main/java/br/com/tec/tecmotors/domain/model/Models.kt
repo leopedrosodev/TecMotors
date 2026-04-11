@@ -38,13 +38,26 @@ data class FuelRecord(
     val totalCost: Double = liters * pricePerLiter
 }
 
-enum class MaintenanceType(val label: String) {
-    OIL_CHANGE("Troca de oleo"),
-    TIRE_ROTATION("Rodizio de pneus"),
-    BRAKE_SERVICE("Freios"),
-    GENERAL_REVIEW("Revisao geral"),
-    OTHER("Outro")
+enum class MaintenanceType(val label: String, val defaultIntervalKm: Double) {
+    OIL_CHANGE("Troca de oleo", 5000.0),
+    TIRE_ROTATION("Rodizio de pneus", 20000.0),
+    BRAKE_SERVICE("Freios", 30000.0),
+    GENERAL_REVIEW("Revisao geral", 10000.0),
+    OTHER("Outro", 10000.0)
 }
+
+data class ComponentHealth(
+    val type: MaintenanceType,
+    val qualityPercent: Int,
+    val kmRemaining: Double?,
+    val daysSinceLastService: Int?,
+    val hasData: Boolean
+)
+
+data class VehicleHealthIndex(
+    val attentionPercent: Int,
+    val components: List<ComponentHealth>
+)
 
 data class MaintenanceRecord(
     val id: Long,

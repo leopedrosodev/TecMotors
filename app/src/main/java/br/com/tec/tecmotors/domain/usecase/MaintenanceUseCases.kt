@@ -1,7 +1,9 @@
 package br.com.tec.tecmotors.domain.usecase
 
+import br.com.tec.tecmotors.domain.model.ComponentHealth
 import br.com.tec.tecmotors.domain.model.MaintenanceRecord
 import br.com.tec.tecmotors.domain.model.MaintenanceType
+import br.com.tec.tecmotors.domain.model.VehicleHealthIndex
 import br.com.tec.tecmotors.domain.repository.MaintenanceRepository
 import br.com.tec.tecmotors.shared.domain.model.SharedMaintenanceDueStatus
 import br.com.tec.tecmotors.shared.domain.model.SharedMaintenanceRecord
@@ -69,6 +71,56 @@ class CalculateMaintenanceStatusUseCase(
             currentOdometerKm = currentOdometerKm
         )
         return sharedStatus.toDomain()
+    }
+}
+
+class CalculateComponentHealthUseCase {
+    operator fun invoke(
+        vehicleId: Long,
+        maintenanceRecords: List<MaintenanceRecord>,
+        currentOdometerKm: Double?,
+        today: LocalDate
+    ): VehicleHealthIndex {
+        val vehicleRecords = maintenanceRecords.filter { it.vehicleId == vehicleId }
+        val todayEpoch = today.toEpochDay()
+
+        val relevantTypes = MaintenanceType.entries.filter { it != MaintenanceType.OTHER }
+
+        val components = relevantTypes.map { type ->
+            val typeRecords = vehicleRecords.filter { it.type == type }
+            val lastDone = typeRecords.filter { it.done }.maxByOrNull { it.createdAtEpochDay }
+            val nextPending = typeRecords.filter { !it.done && it.dueOdometerKm != null }
+                .minByOrNull { it.dueOdometerKm!! }
+
+            val daysSinceLastService = lastDone?.let {
+                (todayEpoch - it.createdAtEpochDay).toInt().coerceAtLeast(0)
+            }
+
+            val kmRemaining = if (currentOdometerKm != null && nextPending?.dueOdometerKm != null) {
+                (nextPending.dueOdometerKm - currentOdometerKm).coerceAtLeast(0.0)
+            } else null
+
+            val qualityPercent = when {
+                kmRemaining != null ->
+                    ((kmRemaining / type.defaultIntervalKm) * 100).toInt().coerceIn(0, 100)
+                lastDone != null -> 100
+                else -> 0
+            }
+
+            ComponentHealth(
+                type = type,
+                qualityPercent = qualityPercent,
+                kmRemaining = kmRemaining,
+                daysSinceLastService = daysSinceLastService,
+                hasData = lastDone != null || nextPending != null
+            )
+        }
+
+        val withData = components.filter { it.hasData }
+        val attentionPercent = if (withData.isEmpty()) 0
+        else (100 - withData.map { it.qualityPercent }.average()).toInt().coerceIn(0, 100)
+
+        return VehicleHealthIndex(attentionPercent = attentionPercent, components = components)
     }
 }
 

@@ -33,6 +33,11 @@
             android:exported="false" />
 
         <receiver
+            android:name=".reminder.OdometerReminderReceiver"
+            android:enabled="true"
+            android:exported="false" />
+
+        <receiver
             android:name=".reminder.BootCompletedReceiver"
             android:enabled="true"
             android:exported="true">

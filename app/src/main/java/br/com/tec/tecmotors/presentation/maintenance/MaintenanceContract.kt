@@ -4,6 +4,7 @@ import br.com.tec.tecmotors.domain.model.MaintenanceRecord
 import br.com.tec.tecmotors.domain.model.MaintenanceType
 import br.com.tec.tecmotors.domain.model.OdometerRecord
 import br.com.tec.tecmotors.domain.model.Vehicle
+import br.com.tec.tecmotors.domain.model.VehicleHealthIndex
 
 sealed interface MaintenanceUiEvent {
     data class SelectVehicle(val vehicleId: Long) : MaintenanceUiEvent
@@ -32,5 +33,6 @@ data class MaintenanceUiState(
     val notesText: String = "",
     val receiptImageUri: String? = null,
     val kmAlerts: List<MaintenanceRecord> = emptyList(),
+    val vehicleHealthIndex: VehicleHealthIndex? = null,
     val feedback: String? = null
 )

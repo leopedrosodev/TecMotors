@@ -44,6 +44,19 @@
     <string name="action_remove_attachment">Remover anexo</string>
     <string name="text_attachment_added">Comprovante anexado</string>
 
+    <string name="title_components_health">Saúde dos componentes</string>
+    <string name="title_attention_index">Índice geral de atenção</string>
+    <string name="text_last_service_days">Última troca há %1$d D</string>
+    <string name="text_km_remaining">%1$s km</string>
+    <string name="text_quality_good">Bom</string>
+    <string name="text_quality_fair">Regular</string>
+    <string name="text_quality_poor">Atenção</string>
+    <string name="text_component_ok">%1$s está em boas condições</string>
+    <string name="component_oil_quality">Qualidade do óleo</string>
+    <string name="component_tire_condition">Condição dos pneus</string>
+    <string name="component_brake_condition">Condição dos freios</string>
+    <string name="component_general_review">Revisão geral</string>
+
     <string name="title_maintenance">Manutenção preventiva</string>
     <string name="desc_maintenance_intro">Cadastre revisoes por data ou por quilometragem para receber alertas visuais.</string>
     <string name="label_maintenance_title">Titulo da manutenção</string>
@@ -153,6 +166,8 @@
     <string name="notif_text_month_end">Registre o odometro final para fechar suas medias do mes.</string>
     <string name="notif_title_maintenance_km">Alerta de manutenção por km</string>
     <string name="notif_text_maintenance_km">Revisoes proximas do vencimento: %1</string>
+    <string name="notif_title_odometer_daily">Registre o km</string>
+    <string name="notif_text_odometer_daily">Hora de registrar o odômetro dos seus veículos.</string>
 
     <string name="feedback_login_cancelled">Login Google cancelado.</string>
     <string name="feedback_login_failed">Falha ao obter conta Google: %1$s</string>

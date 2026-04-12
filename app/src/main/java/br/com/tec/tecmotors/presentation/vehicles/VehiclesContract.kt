@@ -11,7 +11,6 @@ sealed interface VehiclesUiEvent {
     data class ChangeVehicleName(val vehicleId: Long, val value: String) : VehiclesUiEvent
     data class SaveVehicleName(val vehicleId: Long) : VehiclesUiEvent
     data object SaveOdometer : VehiclesUiEvent
-    data object ClearFeedback : VehiclesUiEvent
     data class ChangeNewVehicleName(val value: String) : VehiclesUiEvent
     data class AddVehicle(val type: VehicleType) : VehiclesUiEvent
 }
@@ -23,6 +22,5 @@ data class VehiclesUiState(
     val dateText: String = "",
     val odometerText: String = "",
     val nameDrafts: Map<Long, String> = emptyMap(),
-    val feedback: String? = null,
     val newVehicleName: String = ""
 )

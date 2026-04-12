@@ -30,13 +30,16 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.graphics.Color
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -49,6 +52,7 @@ import br.com.tec.tecmotors.core.di.AppContainer
 import br.com.tec.tecmotors.presentation.account.AccountSyncDialog
 import br.com.tec.tecmotors.presentation.account.AccountSyncUiEvent
 import br.com.tec.tecmotors.presentation.account.AccountSyncViewModel
+import br.com.tec.tecmotors.presentation.common.UiFeedback
 import br.com.tec.tecmotors.presentation.maintenance.MaintenanceScreen
 import br.com.tec.tecmotors.presentation.maintenance.MaintenanceViewModel
 import br.com.tec.tecmotors.presentation.refuels.FuelCalculatorScreen
@@ -58,6 +62,7 @@ import br.com.tec.tecmotors.presentation.reports.ReportsScreen
 import br.com.tec.tecmotors.presentation.reports.ReportsViewModel
 import br.com.tec.tecmotors.presentation.vehicles.VehiclesScreen
 import br.com.tec.tecmotors.presentation.vehicles.VehiclesViewModel
+import br.com.tec.tecmotors.ui.theme.FeedbackSuccess
 import br.com.tec.tecmotors.resolveGoogleClientId
 import br.com.tec.tecmotors.ui.theme.TecMotorsTheme
 import com.google.android.gms.auth.api.signin.GoogleSignIn
@@ -220,29 +225,24 @@ fun TecMotorsRoot(appContainer: AppContainer) {
     }
 
     val snackbarHostState = remember { SnackbarHostState() }
+    var currentSnackbarFeedback by remember { mutableStateOf<UiFeedback?>(null) }
 
-    LaunchedEffect(vehiclesState.feedback) {
-        vehiclesState.feedback?.let {
-            snackbarHostState.showSnackbar(it)
-            vehiclesViewModel.onEvent(
-                br.com.tec.tecmotors.presentation.vehicles.VehiclesUiEvent.ClearFeedback
-            )
+    LaunchedEffect(vehiclesViewModel) {
+        vehiclesViewModel.events.collect { feedback ->
+            currentSnackbarFeedback = feedback
+            snackbarHostState.showSnackbar(feedback.message)
         }
     }
-    LaunchedEffect(refuelsState.feedback) {
-        refuelsState.feedback?.let {
-            snackbarHostState.showSnackbar(it)
-            refuelsViewModel.onEvent(
-                br.com.tec.tecmotors.presentation.refuels.RefuelsUiEvent.ClearFeedback
-            )
+    LaunchedEffect(refuelsViewModel) {
+        refuelsViewModel.events.collect { feedback ->
+            currentSnackbarFeedback = feedback
+            snackbarHostState.showSnackbar(feedback.message)
         }
     }
-    LaunchedEffect(maintenanceState.feedback) {
-        maintenanceState.feedback?.let {
-            snackbarHostState.showSnackbar(it)
-            maintenanceViewModel.onEvent(
-                br.com.tec.tecmotors.presentation.maintenance.MaintenanceUiEvent.ClearFeedback
-            )
+    LaunchedEffect(maintenanceViewModel) {
+        maintenanceViewModel.events.collect { feedback ->
+            currentSnackbarFeedback = feedback
+            snackbarHostState.showSnackbar(feedback.message)
         }
     }
 
@@ -257,10 +257,12 @@ fun TecMotorsRoot(appContainer: AppContainer) {
             containerColor = MaterialTheme.colorScheme.background,
             snackbarHost = {
                 SnackbarHost(hostState = snackbarHostState) { data ->
+                    val containerColor = currentSnackbarFeedback.containerColor()
+                    val contentColor = currentSnackbarFeedback.contentColor()
                     Snackbar(
                         snackbarData = data,
-                        containerColor = MaterialTheme.colorScheme.primary,
-                        contentColor = MaterialTheme.colorScheme.onPrimary
+                        containerColor = containerColor,
+                        contentColor = contentColor
                     )
                 }
             },
@@ -403,5 +405,23 @@ fun TecMotorsRoot(appContainer: AppContainer) {
                 )
             }
         }
+    }
+}
+
+@Composable
+private fun UiFeedback?.containerColor(): Color {
+    return when (this) {
+        is UiFeedback.Error -> MaterialTheme.colorScheme.errorContainer
+        is UiFeedback.Success -> FeedbackSuccess
+        is UiFeedback.Info, null -> MaterialTheme.colorScheme.primary
+    }
+}
+
+@Composable
+private fun UiFeedback?.contentColor(): Color {
+    return when (this) {
+        is UiFeedback.Error -> MaterialTheme.colorScheme.onErrorContainer
+        is UiFeedback.Success -> MaterialTheme.colorScheme.onPrimary
+        is UiFeedback.Info, null -> MaterialTheme.colorScheme.onPrimary
     }
 }

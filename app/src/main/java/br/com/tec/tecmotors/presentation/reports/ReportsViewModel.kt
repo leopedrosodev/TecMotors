@@ -7,7 +7,7 @@ import br.com.tec.tecmotors.domain.model.MaintenanceRecord
 import br.com.tec.tecmotors.domain.model.OdometerRecord
 import br.com.tec.tecmotors.domain.model.PeriodReport
 import br.com.tec.tecmotors.domain.model.VehicleSummary
-import br.com.tec.tecmotors.domain.model.VehicleType
+import br.com.tec.tecmotors.domain.model.monthlyBudgetFor
 import br.com.tec.tecmotors.domain.usecase.CalculateCostPerKmMetricsUseCase
 import br.com.tec.tecmotors.domain.usecase.CalculateMonthlyMetricsUseCase
 import br.com.tec.tecmotors.domain.usecase.CalculatePeriodReportUseCase
@@ -18,6 +18,7 @@ import br.com.tec.tecmotors.domain.usecase.ObserveRefuelsUseCase
 import br.com.tec.tecmotors.domain.usecase.ObserveSettingsUseCase
 import br.com.tec.tecmotors.domain.usecase.ObserveVehiclesUseCase
 import br.com.tec.tecmotors.domain.usecase.SetMonthlyBudgetUseCase
+import br.com.tec.tecmotors.presentation.common.UiFeedback
 import br.com.tec.tecmotors.presentation.common.parseDateBrOrIso
 import br.com.tec.tecmotors.presentation.common.parseDecimal
 import br.com.tec.tecmotors.presentation.common.todayBr
@@ -147,13 +148,11 @@ class ReportsViewModel(
             emptyReport()
         }
 
-        val budgetValue = when (selectedVehicle?.type) {
-            VehicleType.CAR -> settings.monthlyBudgetCar
-            VehicleType.MOTORCYCLE -> settings.monthlyBudgetMotorcycle
-            VehicleType.OTHER, null -> 0.0
-        }
+        val budgetValue = settings.monthlyBudgetFor(selectedVehicle?.type)
 
-        val shouldHydrateBudgetField = state.budgetInputText.isBlank() || selected != previousSelected
+        // Keep the auto-selected first vehicle from clobbering user input on first render.
+        val shouldHydrateBudgetField = state.budgetInputText.isBlank() ||
+            (previousSelected > 0L && selected != previousSelected)
         val budgetInputText = if (shouldHydrateBudgetField) {
             if (budgetValue > 0.0) {
                 String.format(Locale.US, "%.2f", budgetValue)
@@ -217,7 +216,9 @@ class ReportsViewModel(
                 val start = parseDateBrOrIso(uiState.value.customStartDateText)
                 val end = parseDateBrOrIso(uiState.value.customEndDateText)
                 if (start == null || end == null || start.isAfter(end)) {
-                    localState.update { it.copy(exportFeedback = "Periodo personalizado invalido") }
+                    localState.update {
+                        it.copy(exportFeedback = UiFeedback.Error("Periodo personalizado invalido"))
+                    }
                 } else {
                     localState.update { it.copy(exportFeedback = null) }
                 }
@@ -232,7 +233,7 @@ class ReportsViewModel(
                 val selectedVehicle = current.vehicles.firstOrNull { it.id == current.selectedVehicleId } ?: return
                 val parsed = parseDecimal(current.budgetInputText)
                 if (parsed == null || parsed < 0.0) {
-                    localState.update { it.copy(exportFeedback = "Orcamento invalido") }
+                    localState.update { it.copy(exportFeedback = UiFeedback.Error("Orcamento invalido")) }
                     return
                 }
 
@@ -240,7 +241,7 @@ class ReportsViewModel(
                     setMonthlyBudgetUseCase(selectedVehicle.type, parsed)
                     localState.update {
                         it.copy(
-                            exportFeedback = "Orcamento salvo",
+                            exportFeedback = UiFeedback.Success("Orcamento salvo"),
                             budgetInputText = String.format(Locale.US, "%.2f", parsed)
                         )
                     }
@@ -248,7 +249,7 @@ class ReportsViewModel(
             }
 
             is ReportsUiEvent.SetExportFeedback -> {
-                localState.update { it.copy(exportFeedback = event.message) }
+                localState.update { it.copy(exportFeedback = event.feedback) }
             }
         }
     }

@@ -124,5 +124,13 @@ data class Settings(
     val legacyImportDone: Boolean,
     val dataUpdatedAtMillis: Long,
     val monthlyBudgetCar: Double,
-    val monthlyBudgetMotorcycle: Double
+    val monthlyBudgetMotorcycle: Double,
+    val vehicleBudgets: Map<VehicleType, Double> = emptyMap()
 )
+
+fun Settings.monthlyBudgetFor(vehicleType: VehicleType?): Double = when (vehicleType) {
+    VehicleType.CAR -> vehicleBudgets[VehicleType.CAR] ?: monthlyBudgetCar
+    VehicleType.MOTORCYCLE -> vehicleBudgets[VehicleType.MOTORCYCLE] ?: monthlyBudgetMotorcycle
+    VehicleType.OTHER -> vehicleBudgets[VehicleType.OTHER] ?: 0.0
+    null -> 0.0
+}

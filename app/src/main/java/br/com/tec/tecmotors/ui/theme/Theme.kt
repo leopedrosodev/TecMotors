@@ -1,5 +1,6 @@
 package br.com.tec.tecmotors.ui.theme
 
+import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
@@ -44,3 +45,6 @@ fun TecMotorsTheme(
         content = content
     )
 }
+
+val ColorScheme.accentHighlight
+    get() = primary

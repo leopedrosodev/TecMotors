@@ -69,6 +69,10 @@ android {
         compose = true
     }
 
+    sourceSets {
+        getByName("androidTest").assets.srcDirs("$projectDir/schemas")
+    }
+
     applicationVariants.all {
         val variant = this
         outputs.all {

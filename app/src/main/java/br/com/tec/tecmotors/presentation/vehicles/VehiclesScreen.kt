@@ -32,26 +32,26 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.unit.dp
 import br.com.tec.tecmotors.R
 import br.com.tec.tecmotors.domain.model.OdometerRecord
 import br.com.tec.tecmotors.domain.model.VehicleType
+import br.com.tec.tecmotors.presentation.common.DateBrField
+import br.com.tec.tecmotors.presentation.common.DecimalField
 import br.com.tec.tecmotors.presentation.common.VehicleChipSelector
 import br.com.tec.tecmotors.presentation.common.formatNumber
-
-private val OdometerHighlightColor = Color(0xFF2F81F7)
+import br.com.tec.tecmotors.ui.theme.accentHighlight
 
 @Composable
 fun VehiclesScreen(
     state: VehiclesUiState,
     onEvent: (VehiclesUiEvent) -> Unit
 ) {
+    val accentHighlight = MaterialTheme.colorScheme.accentHighlight
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -174,34 +174,31 @@ fun VehiclesScreen(
             onSelect = { onEvent(VehiclesUiEvent.SelectVehicle(it)) }
         )
 
-        OutlinedTextField(
+        DateBrField(
             value = state.dateText,
             onValueChange = { onEvent(VehiclesUiEvent.ChangeDate(it)) },
             modifier = Modifier.fillMaxWidth(),
-            label = { Text(stringResource(R.string.label_date_br)) },
-            singleLine = true
+            label = stringResource(R.string.label_date_br)
         )
 
         Card(
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(12.dp),
-            border = BorderStroke(2.dp, OdometerHighlightColor),
+            border = BorderStroke(2.dp, accentHighlight),
             colors = CardDefaults.cardColors(
-                containerColor = OdometerHighlightColor.copy(alpha = 0.08f)
+                containerColor = accentHighlight.copy(alpha = 0.08f)
             )
         ) {
             Column(modifier = Modifier.padding(12.dp)) {
-                OutlinedTextField(
+                DecimalField(
                     value = state.odometerText,
                     onValueChange = { onEvent(VehiclesUiEvent.ChangeOdometer(it)) },
                     modifier = Modifier.fillMaxWidth(),
-                    label = { Text(stringResource(R.string.label_odometer_km)) },
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                    singleLine = true,
+                    label = stringResource(R.string.label_odometer_km),
                     colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = OdometerHighlightColor,
-                        unfocusedBorderColor = OdometerHighlightColor.copy(alpha = 0.6f),
-                        cursorColor = OdometerHighlightColor
+                        focusedBorderColor = accentHighlight,
+                        unfocusedBorderColor = accentHighlight.copy(alpha = 0.6f),
+                        cursorColor = accentHighlight
                     )
                 )
             }
@@ -210,7 +207,7 @@ fun VehiclesScreen(
         Button(
             onClick = { onEvent(VehiclesUiEvent.SaveOdometer) },
             modifier = Modifier.fillMaxWidth(),
-            colors = ButtonDefaults.buttonColors(containerColor = OdometerHighlightColor)
+            colors = ButtonDefaults.buttonColors(containerColor = accentHighlight)
         ) {
             Text(stringResource(R.string.action_save_odometer))
         }

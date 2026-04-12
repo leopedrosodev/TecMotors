@@ -65,3 +65,9 @@ data class SettingsEntity(
     val monthlyBudgetCar: Double,
     val monthlyBudgetMotorcycle: Double
 )
+
+@Entity(tableName = "vehicle_budgets")
+data class VehicleBudgetEntity(
+    @PrimaryKey val vehicleType: String,
+    val amount: Double
+)

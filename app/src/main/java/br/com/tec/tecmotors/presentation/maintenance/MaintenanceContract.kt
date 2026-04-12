@@ -17,7 +17,6 @@ sealed interface MaintenanceUiEvent {
     data class SetReceiptImageUri(val value: String?) : MaintenanceUiEvent
     data object SaveMaintenance : MaintenanceUiEvent
     data class ToggleDone(val recordId: Long, val done: Boolean) : MaintenanceUiEvent
-    data object ClearFeedback : MaintenanceUiEvent
 }
 
 data class MaintenanceUiState(
@@ -33,6 +32,5 @@ data class MaintenanceUiState(
     val notesText: String = "",
     val receiptImageUri: String? = null,
     val kmAlerts: List<MaintenanceRecord> = emptyList(),
-    val vehicleHealthIndex: VehicleHealthIndex? = null,
-    val feedback: String? = null
+    val vehicleHealthIndex: VehicleHealthIndex? = null
 )

@@ -8,27 +8,27 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import br.com.tec.tecmotors.R
 import br.com.tec.tecmotors.data.CsvExporter
 import br.com.tec.tecmotors.domain.model.LocalStateSnapshot
 import br.com.tec.tecmotors.presentation.common.ChartBar
+import br.com.tec.tecmotors.presentation.common.DateBrField
 import br.com.tec.tecmotors.presentation.common.MetricBarChart
+import br.com.tec.tecmotors.presentation.common.MoneyField
+import br.com.tec.tecmotors.presentation.common.UiFeedback
 import br.com.tec.tecmotors.presentation.common.VehicleChipSelector
 import br.com.tec.tecmotors.presentation.common.dateBrFormatter
 import br.com.tec.tecmotors.presentation.common.formatCurrency
@@ -48,7 +48,11 @@ fun ReportsScreen(
         contract = ActivityResultContracts.CreateDocument("text/csv")
     ) { uri ->
         if (uri == null) {
-            onEvent(ReportsUiEvent.SetExportFeedback(context.getString(R.string.feedback_export_cancelled)))
+            onEvent(
+                ReportsUiEvent.SetExportFeedback(
+                    UiFeedback.Info(context.getString(R.string.feedback_export_cancelled))
+                )
+            )
             return@rememberLauncherForActivityResult
         }
 
@@ -70,8 +74,12 @@ fun ReportsScreen(
         onEvent(
             ReportsUiEvent.SetExportFeedback(
                 result.fold(
-                    onSuccess = { context.getString(R.string.feedback_export_success) },
-                    onFailure = { context.getString(R.string.feedback_export_failed, it.message.orEmpty()) }
+                    onSuccess = { UiFeedback.Success(context.getString(R.string.feedback_export_success)) },
+                    onFailure = {
+                        UiFeedback.Error(
+                            context.getString(R.string.feedback_export_failed, it.message.orEmpty())
+                        )
+                    }
                 )
             )
         )
@@ -112,13 +120,11 @@ fun ReportsScreen(
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 Text(stringResource(R.string.title_monthly_budget), fontWeight = FontWeight.Bold)
-                OutlinedTextField(
+                MoneyField(
                     value = state.budgetInputText,
                     onValueChange = { onEvent(ReportsUiEvent.ChangeBudgetInput(it)) },
                     modifier = Modifier.fillMaxWidth(),
-                    singleLine = true,
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                    label = { Text(stringResource(R.string.label_monthly_budget)) }
+                    label = stringResource(R.string.label_monthly_budget)
                 )
                 Button(
                     onClick = { onEvent(ReportsUiEvent.SaveBudget) },
@@ -173,19 +179,17 @@ fun ReportsScreen(
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 Text(stringResource(R.string.title_custom_period), fontWeight = FontWeight.Bold)
-                OutlinedTextField(
+                DateBrField(
                     value = state.customStartDateText,
                     onValueChange = { onEvent(ReportsUiEvent.ChangeCustomStartDate(it)) },
                     modifier = Modifier.fillMaxWidth(),
-                    singleLine = true,
-                    label = { Text(stringResource(R.string.label_period_start)) }
+                    label = stringResource(R.string.label_period_start)
                 )
-                OutlinedTextField(
+                DateBrField(
                     value = state.customEndDateText,
                     onValueChange = { onEvent(ReportsUiEvent.ChangeCustomEndDate(it)) },
                     modifier = Modifier.fillMaxWidth(),
-                    singleLine = true,
-                    label = { Text(stringResource(R.string.label_period_end)) }
+                    label = stringResource(R.string.label_period_end)
                 )
                 Button(
                     onClick = { onEvent(ReportsUiEvent.ApplyCustomPeriod) },
@@ -290,7 +294,14 @@ fun ReportsScreen(
         }
 
         state.exportFeedback?.let {
-            Text(it, color = MaterialTheme.colorScheme.primary)
+            Text(
+                text = it.message,
+                color = when (it) {
+                    is UiFeedback.Error -> MaterialTheme.colorScheme.error
+                    is UiFeedback.Success -> MaterialTheme.colorScheme.primary
+                    is UiFeedback.Info -> MaterialTheme.colorScheme.onSurfaceVariant
+                }
+            )
         }
     }
 }

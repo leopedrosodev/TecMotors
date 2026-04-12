@@ -7,6 +7,7 @@ import br.com.tec.tecmotors.data.local.entity.FuelRecordEntity
 import br.com.tec.tecmotors.data.local.entity.MaintenanceRecordEntity
 import br.com.tec.tecmotors.data.local.entity.OdometerRecordEntity
 import br.com.tec.tecmotors.data.local.entity.SettingsEntity
+import br.com.tec.tecmotors.data.local.entity.VehicleBudgetEntity
 import br.com.tec.tecmotors.data.local.entity.VehicleEntity
 import br.com.tec.tecmotors.data.local.mapper.toDomain
 import br.com.tec.tecmotors.domain.model.FuelUsageType
@@ -23,6 +24,7 @@ import br.com.tec.tecmotors.domain.repository.SettingsRepository
 import br.com.tec.tecmotors.domain.repository.SnapshotRepository
 import br.com.tec.tecmotors.domain.repository.VehicleRepository
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
 
 class VehicleRepositoryImpl(
@@ -48,7 +50,7 @@ class VehicleRepositoryImpl(
     }
 
     override suspend fun addVehicle(name: String, type: VehicleType) {
-        val nextId = (database.vehicleDao().maxId() ?: 0L) + 1L
+        val nextId = nextIdOf { database.vehicleDao().maxId() }
         database.vehicleDao().upsert(VehicleEntity(id = nextId, name = name.trim(), type = type.name))
         settingsRepository.touchDataUpdatedAt()
     }
@@ -70,7 +72,7 @@ class OdometerRepositoryImpl(
         database.odometerDao().getAll().map { it.toDomain() }
 
     override suspend fun addOdometer(vehicleId: Long, dateEpochDay: Long, odometerKm: Double) {
-        val nextId = (database.odometerDao().maxId() ?: 0L) + 1L
+        val nextId = nextIdOf { database.odometerDao().maxId() }
         database.odometerDao().upsert(
             OdometerRecordEntity(
                 id = nextId,
@@ -103,7 +105,7 @@ class RefuelRepositoryImpl(
         usageType: FuelUsageType,
         receiptImageUri: String?
     ) {
-        val nextId = (database.fuelDao().maxId() ?: 0L) + 1L
+        val nextId = nextIdOf { database.fuelDao().maxId() }
         database.fuelDao().upsert(
             FuelRecordEntity(
                 id = nextId,
@@ -148,7 +150,7 @@ class MaintenanceRepositoryImpl(
         estimatedCost: Double?,
         receiptImageUri: String?
     ) {
-        val nextId = (database.maintenanceDao().maxId() ?: 0L) + 1L
+        val nextId = nextIdOf { database.maintenanceDao().maxId() }
         database.maintenanceDao().upsert(
             MaintenanceRecordEntity(
                 id = nextId,
@@ -177,8 +179,11 @@ class SettingsRepositoryImpl(
     private val database: TecMotorsDatabase
 ) : SettingsRepository {
     override fun observeSettings(): Flow<Settings> {
-        return database.settingsDao().observe().map { entity ->
-            (entity ?: defaultSettings()).toDomain()
+        return combine(
+            database.settingsDao().observe(),
+            database.vehicleBudgetDao().observeAll()
+        ) { entity, budgets ->
+            (entity ?: defaultSettings()).toDomain(budgets.toBudgetMap())
         }
     }
 
@@ -187,7 +192,9 @@ class SettingsRepositoryImpl(
     }
 
     override suspend fun getSettings(): Settings {
-        return (database.settingsDao().get() ?: defaultSettings()).toDomain()
+        val entity = database.settingsDao().get() ?: defaultSettings()
+        val budgets = database.vehicleBudgetDao().getAll().toBudgetMap()
+        return entity.toDomain(budgets)
     }
 
     override suspend fun setDarkTheme(enabled: Boolean) {
@@ -198,12 +205,9 @@ class SettingsRepositoryImpl(
     override suspend fun setMonthlyBudget(vehicleType: VehicleType, amount: Double) {
         val normalized = amount.coerceAtLeast(0.0)
         val current = database.settingsDao().get() ?: defaultSettings()
-        val updated = when (vehicleType) {
-            VehicleType.CAR -> current.copy(monthlyBudgetCar = normalized)
-            VehicleType.MOTORCYCLE -> current.copy(monthlyBudgetMotorcycle = normalized)
-            VehicleType.OTHER -> return
-        }
+        val updated = current.updatedMonthlyBudget(vehicleType, normalized) ?: return
         database.settingsDao().upsert(updated)
+        database.vehicleBudgetDao().upsert(vehicleType.toBudgetEntity(normalized))
     }
 
     override suspend fun markLegacyImportDone() {
@@ -243,10 +247,48 @@ class SnapshotRepositoryImpl(
     }
 }
 
-private fun SettingsEntity.toDomain(): Settings = Settings(
+private fun SettingsEntity.toDomain(vehicleBudgets: Map<VehicleType, Double> = emptyMap()): Settings = Settings(
     darkThemeEnabled = darkThemeEnabled,
     legacyImportDone = legacyImportDone,
     dataUpdatedAtMillis = dataUpdatedAtMillis,
     monthlyBudgetCar = monthlyBudgetCar,
-    monthlyBudgetMotorcycle = monthlyBudgetMotorcycle
+    monthlyBudgetMotorcycle = monthlyBudgetMotorcycle,
+    vehicleBudgets = vehicleBudgets
 )
+
+private suspend fun nextIdOf(maxIdProvider: suspend () -> Long?): Long {
+    return (maxIdProvider() ?: 0L) + 1L
+}
+
+private fun SettingsEntity.updatedMonthlyBudget(
+    vehicleType: VehicleType,
+    amount: Double
+): SettingsEntity? = when (vehicleType) {
+    VehicleType.CAR -> copy(monthlyBudgetCar = amount)
+    VehicleType.MOTORCYCLE -> copy(monthlyBudgetMotorcycle = amount)
+    VehicleType.OTHER -> this
+}
+
+private fun List<VehicleBudgetEntity>.toBudgetMap(): Map<VehicleType, Double> {
+    return associateNotNull { entity ->
+        runCatching { VehicleType.valueOf(entity.vehicleType) }
+            .getOrNull()
+            ?.let { type -> type to entity.amount }
+    }
+}
+
+private fun VehicleType.toBudgetEntity(amount: Double): VehicleBudgetEntity {
+    return VehicleBudgetEntity(
+        vehicleType = name,
+        amount = amount
+    )
+}
+
+private inline fun <T, R> Iterable<T>.associateNotNull(transform: (T) -> Pair<R, Double>?): Map<R, Double> {
+    val result = linkedMapOf<R, Double>()
+    for (item in this) {
+        val entry = transform(item) ?: continue
+        result[entry.first] = entry.second
+    }
+    return result
+}

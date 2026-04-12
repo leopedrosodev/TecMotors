@@ -14,7 +14,6 @@ sealed interface RefuelsUiEvent {
     data class SelectUsageType(val value: FuelUsageType) : RefuelsUiEvent
     data class SetReceiptImageUri(val value: String?) : RefuelsUiEvent
     data object SaveRefuel : RefuelsUiEvent
-    data object ClearFeedback : RefuelsUiEvent
 }
 
 data class StationInsight(
@@ -35,6 +34,5 @@ data class RefuelsUiState(
     val selectedUsageType: FuelUsageType = FuelUsageType.MIXED,
     val receiptImageUri: String? = null,
     val stationInsights: List<StationInsight> = emptyList(),
-    val suggestedStationName: String? = null,
-    val feedback: String? = null
+    val suggestedStationName: String? = null
 )

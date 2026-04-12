@@ -7,12 +7,10 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -24,9 +22,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import br.com.tec.tecmotors.R
+import br.com.tec.tecmotors.presentation.common.DecimalField
+import br.com.tec.tecmotors.presentation.common.MoneyField
 import br.com.tec.tecmotors.presentation.common.formatCurrency
 import br.com.tec.tecmotors.presentation.common.formatNumber
 import br.com.tec.tecmotors.presentation.common.parseDecimal
@@ -110,43 +109,35 @@ fun FuelCalculatorScreen() {
             }
         }
 
-        OutlinedTextField(
+        DecimalField(
             value = distanceText,
             onValueChange = { distanceText = it },
-            label = { Text(stringResource(R.string.calc_distance)) },
             modifier = Modifier.fillMaxWidth(),
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-            enabled = missingField != MissingField.DISTANCE,
-            singleLine = true
+            label = stringResource(R.string.calc_distance),
+            enabled = missingField != MissingField.DISTANCE
         )
 
-        OutlinedTextField(
+        DecimalField(
             value = consumptionText,
             onValueChange = { consumptionText = it },
-            label = { Text(stringResource(R.string.calc_consumption)) },
             modifier = Modifier.fillMaxWidth(),
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-            enabled = missingField != MissingField.CONSUMPTION,
-            singleLine = true
+            label = stringResource(R.string.calc_consumption),
+            enabled = missingField != MissingField.CONSUMPTION
         )
 
-        OutlinedTextField(
+        DecimalField(
             value = litersText,
             onValueChange = { litersText = it },
-            label = { Text(stringResource(R.string.calc_liters)) },
             modifier = Modifier.fillMaxWidth(),
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-            enabled = missingField != MissingField.LITERS,
-            singleLine = true
+            label = stringResource(R.string.calc_liters),
+            enabled = missingField != MissingField.LITERS
         )
 
-        OutlinedTextField(
+        MoneyField(
             value = priceText,
             onValueChange = { priceText = it },
-            label = { Text(stringResource(R.string.calc_price)) },
             modifier = Modifier.fillMaxWidth(),
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-            singleLine = true
+            label = stringResource(R.string.calc_price)
         )
 
         Card(

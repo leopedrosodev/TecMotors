@@ -22,12 +22,12 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import br.com.tec.tecmotors.domain.model.Vehicle
 import br.com.tec.tecmotors.domain.model.VehicleType
+import br.com.tec.tecmotors.ui.theme.accentHighlight
 
 @Composable
 fun VehicleChipSelector(
@@ -62,7 +62,7 @@ fun VehicleCardSelector(
         vehicles.forEach { vehicle ->
             val selected = selectedVehicleId == vehicle.id
             val scale = animateFloatAsState(if (selected) 1f else 0.96f, label = "vehicle-card-scale")
-            val selectedBlue = Color(0xFF2F81F7)
+            val accentHighlight = MaterialTheme.colorScheme.accentHighlight
 
             Card(
                 modifier = Modifier
@@ -70,13 +70,13 @@ fun VehicleCardSelector(
                     .graphicsLayer(scaleX = scale.value, scaleY = scale.value)
                     .border(
                         width = if (selected) 2.dp else 1.dp,
-                        color = if (selected) selectedBlue else MaterialTheme.colorScheme.outline,
+                        color = if (selected) accentHighlight else MaterialTheme.colorScheme.outline,
                         shape = RoundedCornerShape(14.dp)
                     ),
                 onClick = { onSelect(vehicle.id) },
                 colors = CardDefaults.cardColors(
                     containerColor = if (selected) {
-                        selectedBlue.copy(alpha = 0.18f)
+                        accentHighlight.copy(alpha = 0.18f)
                     } else {
                         MaterialTheme.colorScheme.surfaceVariant
                     }
@@ -90,7 +90,7 @@ fun VehicleCardSelector(
                             VehicleType.OTHER -> Icons.Filled.LocalShipping
                         },
                         contentDescription = vehicle.type.label,
-                        tint = if (selected) selectedBlue else MaterialTheme.colorScheme.onSurface
+                        tint = if (selected) accentHighlight else MaterialTheme.colorScheme.onSurface
                     )
                     Text(
                         text = vehicle.name,

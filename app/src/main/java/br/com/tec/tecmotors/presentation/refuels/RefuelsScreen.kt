@@ -11,7 +11,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
@@ -26,10 +25,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import br.com.tec.tecmotors.R
 import br.com.tec.tecmotors.domain.model.FuelUsageType
+import br.com.tec.tecmotors.presentation.common.DateBrField
+import br.com.tec.tecmotors.presentation.common.DecimalField
 import br.com.tec.tecmotors.presentation.common.VehicleCardSelector
 import br.com.tec.tecmotors.presentation.common.formatCurrency
 import br.com.tec.tecmotors.presentation.common.formatDate
@@ -74,36 +74,29 @@ fun RefuelsScreen(
             onSelect = { onEvent(RefuelsUiEvent.SelectVehicle(it)) }
         )
 
-        OutlinedTextField(
+        DateBrField(
             value = state.dateText,
             onValueChange = { onEvent(RefuelsUiEvent.ChangeDate(it)) },
             modifier = Modifier.fillMaxWidth(),
-            label = { Text(stringResource(R.string.label_date_br)) },
-            singleLine = true
+            label = stringResource(R.string.label_date_br)
         )
-        OutlinedTextField(
+        DecimalField(
             value = state.odometerText,
             onValueChange = { onEvent(RefuelsUiEvent.ChangeOdometer(it)) },
             modifier = Modifier.fillMaxWidth(),
-            label = { Text(stringResource(R.string.label_odometer_km)) },
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-            singleLine = true
+            label = stringResource(R.string.label_odometer_km)
         )
-        OutlinedTextField(
+        DecimalField(
             value = state.litersText,
             onValueChange = { onEvent(RefuelsUiEvent.ChangeLiters(it)) },
             modifier = Modifier.fillMaxWidth(),
-            label = { Text(stringResource(R.string.label_liters)) },
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-            singleLine = true
+            label = stringResource(R.string.label_liters)
         )
-        OutlinedTextField(
+        DecimalField(
             value = state.priceText,
             onValueChange = { onEvent(RefuelsUiEvent.ChangePrice(it)) },
             modifier = Modifier.fillMaxWidth(),
-            label = { Text(stringResource(R.string.label_price_per_liter)) },
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-            singleLine = true
+            label = stringResource(R.string.label_price_per_liter)
         )
         OutlinedTextField(
             value = state.stationText,

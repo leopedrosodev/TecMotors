@@ -8,6 +8,7 @@ import br.com.tec.tecmotors.domain.model.OdometerRecord
 import br.com.tec.tecmotors.domain.model.PeriodReport
 import br.com.tec.tecmotors.domain.model.Vehicle
 import br.com.tec.tecmotors.domain.model.VehicleSummary
+import br.com.tec.tecmotors.presentation.common.UiFeedback
 
 sealed interface ReportsUiEvent {
     data class SelectVehicle(val vehicleId: Long) : ReportsUiEvent
@@ -16,7 +17,7 @@ sealed interface ReportsUiEvent {
     data object ApplyCustomPeriod : ReportsUiEvent
     data class ChangeBudgetInput(val value: String) : ReportsUiEvent
     data object SaveBudget : ReportsUiEvent
-    data class SetExportFeedback(val message: String?) : ReportsUiEvent
+    data class SetExportFeedback(val feedback: UiFeedback?) : ReportsUiEvent
 }
 
 data class ReportsUiState(
@@ -41,5 +42,5 @@ data class ReportsUiState(
     val budgetValue: Double = 0.0,
     val budgetExceeded: Boolean = false,
     val budgetRemaining: Double = 0.0,
-    val exportFeedback: String? = null
+    val exportFeedback: UiFeedback? = null
 )

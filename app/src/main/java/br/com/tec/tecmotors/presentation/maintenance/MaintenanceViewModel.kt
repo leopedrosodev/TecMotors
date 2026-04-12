@@ -12,11 +12,14 @@ import br.com.tec.tecmotors.domain.usecase.ObserveMaintenanceUseCase
 import br.com.tec.tecmotors.domain.usecase.ObserveOdometersUseCase
 import br.com.tec.tecmotors.domain.usecase.ObserveVehiclesUseCase
 import br.com.tec.tecmotors.domain.usecase.SetMaintenanceDoneUseCase
+import br.com.tec.tecmotors.presentation.common.UiFeedback
 import br.com.tec.tecmotors.presentation.common.parseDateBrOrIso
 import br.com.tec.tecmotors.presentation.common.parseDecimal
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
@@ -33,6 +36,8 @@ class MaintenanceViewModel(
     private val calculateComponentHealthUseCase: CalculateComponentHealthUseCase
 ) : ViewModel() {
     private val localState = MutableStateFlow(MaintenanceUiState())
+    private val _events = MutableSharedFlow<UiFeedback>(extraBufferCapacity = 1)
+    val events = _events.asSharedFlow()
 
     val uiState: StateFlow<MaintenanceUiState> = combine(
         observeVehiclesUseCase(),
@@ -109,8 +114,6 @@ class MaintenanceViewModel(
                     setMaintenanceDoneUseCase(event.recordId, event.done)
                 }
             }
-
-            MaintenanceUiEvent.ClearFeedback -> localState.update { it.copy(feedback = null) }
         }
     }
 
@@ -126,27 +129,27 @@ class MaintenanceViewModel(
         val estimatedCost = estimatedCostText.takeIf { it.isNotBlank() }?.let(::parseDecimal)
 
         if (state.selectedVehicleId <= 0L) {
-            localState.update { it.copy(feedback = "Selecione um veiculo") }
+            emitFeedback(UiFeedback.Error("Selecione um veiculo"))
             return
         }
         if (state.titleText.isBlank()) {
-            localState.update { it.copy(feedback = "Informe um titulo para a manutencao") }
+            emitFeedback(UiFeedback.Error("Informe um titulo para a manutencao"))
             return
         }
         if (dueDateText.isNotBlank() && dueDate == null) {
-            localState.update { it.copy(feedback = "Data invalida") }
+            emitFeedback(UiFeedback.Error("Data invalida"))
             return
         }
         if (dueKmText.isNotBlank() && (dueKm == null || dueKm <= 0.0)) {
-            localState.update { it.copy(feedback = "Odometro invalido") }
+            emitFeedback(UiFeedback.Error("Odometro invalido"))
             return
         }
         if (estimatedCostText.isNotBlank() && (estimatedCost == null || estimatedCost < 0.0)) {
-            localState.update { it.copy(feedback = "Custo estimado invalido") }
+            emitFeedback(UiFeedback.Error("Custo estimado invalido"))
             return
         }
         if (dueDate == null && dueKm == null) {
-            localState.update { it.copy(feedback = "Informe data ou odometro para vencimento") }
+            emitFeedback(UiFeedback.Error("Informe data ou odometro para vencimento"))
             return
         }
 
@@ -168,10 +171,10 @@ class MaintenanceViewModel(
                     dueKmText = "",
                     estimatedCostText = "",
                     notesText = "",
-                    receiptImageUri = null,
-                    feedback = "Manutencao cadastrada"
+                    receiptImageUri = null
                 )
             }
+            emitFeedback(UiFeedback.Success("Manutencao cadastrada"))
         }
     }
 
@@ -187,5 +190,11 @@ class MaintenanceViewModel(
     fun statusOf(record: MaintenanceRecord): MaintenanceDueStatus {
         val odometer = latestOdometer(record.vehicleId)
         return calculateMaintenanceStatusUseCase(record, odometer, LocalDate.now())
+    }
+
+    private fun emitFeedback(feedback: UiFeedback) {
+        if (!_events.tryEmit(feedback)) {
+            viewModelScope.launch { _events.emit(feedback) }
+        }
     }
 }

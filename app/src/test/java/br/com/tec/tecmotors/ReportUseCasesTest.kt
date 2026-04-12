@@ -43,6 +43,31 @@ class ReportUseCasesTest {
     }
 
     @Test
+    fun calculatePeriodReport_withZeroLiters_returnsZeroAverageConsumption() {
+        val vehicleId = 1L
+        val fuels = listOf(
+            FuelRecord(1, vehicleId, LocalDate.of(2026, 3, 1).toEpochDay(), 1000.0, 0.0, 5.5)
+        )
+        val odometers = listOf(
+            OdometerRecord(2, vehicleId, LocalDate.of(2026, 3, 10).toEpochDay(), 1200.0)
+        )
+
+        val report = periodUseCase(
+            vehicleId = vehicleId,
+            start = LocalDate.of(2026, 3, 1),
+            end = LocalDate.of(2026, 3, 31),
+            fuelRecords = fuels,
+            odometerRecords = odometers
+        )
+
+        assertEquals(200.0, report.distanceKm, 0.001)
+        assertEquals(0.0, report.liters, 0.001)
+        assertEquals(0.0, report.averageKmPerLiter, 0.001)
+        assertEquals(0.0, report.totalCost, 0.001)
+        assertEquals(1, report.refuelCount)
+    }
+
+    @Test
     fun monthlyMetrics_and_summary_haveConsistentValues() {
         val vehicleId = 1L
         val now = LocalDate.now()

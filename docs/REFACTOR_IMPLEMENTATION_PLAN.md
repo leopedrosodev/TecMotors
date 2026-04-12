@@ -1,35 +1,47 @@
 # Plano de Implementacao de Refatoracao
 
-Status geral: `Proposto`
+Status geral: `Em andamento`
 Atualizado em: `12/04/2026`
 
 ## Objetivo
 Transformar os pontos de melhoria identificados no app em um backlog executavel, priorizado por impacto/esforco e alinhado com o estado atual do codigo.
 
 ## Resumo executivo
-- Prioridade imediata: `feedback tipado`, `cor de destaque no tema`, `componentes Compose compartilhados` e `event channel para snackbars`.
-- Itens com melhor retorno na base atual: `1`, `2`, `3` e `6`.
+- Concluido: itens `1`, `2` e `6`.
+- Em andamento: itens `4`, `5` e `9`.
+- Proxima prioridade pratica: consolidar testes de regressao e fechar o restante do item `3`.
 - Itens que pedem migracao de schema ou decisao de produto: `4` e `5`.
-- Itens parcialmente iniciados: `8` e `9`.
+- Itens parcialmente iniciados: `4`, `5`, `8` e `9`.
 
 ## Observacoes sobre o estado atual
-- O app hoje usa `feedback: String?` em `vehicles`, `refuels` e `maintenance`, e `exportFeedback: String?` em `reports`.
+- `UiFeedback` ja existe em `presentation.common`.
+- `vehicles`, `refuels` e `maintenance` ja migraram de `feedback no state` para `SharedFlow<UiFeedback>`.
+- `reports` segue com `exportFeedback` tipado em state, porque hoje o feedback e inline na propria tela.
 - O `SnackbarHost` central fica em [TecMotorsRoot.kt](/home/leonardo/codes/github/TecMotors/app/src/main/java/br/com/tec/tecmotors/presentation/app/TecMotorsRoot.kt).
-- A cor `Color(0xFF2F81F7)` ainda aparece hardcoded em pontos de UI, apesar de o tema ja ter `AutoBlueDark`.
+- O destaque visual ja foi centralizado via `MaterialTheme.colorScheme.accentHighlight`.
+- Campos compartilhados `DateBrField`, `DecimalField` e `MoneyField` ja existem e estao aplicados em telas principais.
 - Ja existe uma base de testes unitarios no modulo `app` e testes de calculo no modulo `shared`, entao o item de cobertura deve focar em lacunas, nao em partir do zero.
 - A migracao KMP ja comecou. O modulo `shared` existe e parte das regras de calculo ja foi extraida.
 
+## Progresso atual
+- Item `1`: `Concluido`
+- Item `2`: `Concluido`
+- Item `3`: `Concluido`
+- Item `4`: `Parcial`
+- Item `5`: `Parcial`
+- Item `6`: `Concluido`
+- Item `9`: `Em andamento`
+
 ## Ordem recomendada
-1. Item `1` - Feedback tipado
-2. Item `2` - Cor de destaque no tema
-3. Item `3` - Componentes Compose compartilhados
-4. Item `6` - Event channel para snackbars
-5. Item `9` - Fechar lacunas de testes
-6. Itens `4`, `5`, `7` e `8` conforme roadmap e folego de arquitetura
+1. Item `9` - Fechar lacunas de testes das refatoracoes ja entregues
+2. Item `5` - Decidir modelo final de budget por tipo e escopo da migration
+3. Item `4` - Consolidar helper de ID e decidir se vale migracao futura
+4. Itens `7` e `8` conforme roadmap e folego de arquitetura
 
 ## Tier 1 - Alta prioridade
 
 ### 1. Sistema de feedback tipado
+Status: `Concluido`
 Impacto: `Alto`
 Esforco: `Baixo`
 
@@ -78,8 +90,13 @@ sealed class UiFeedback(
 
 #### Observacao
 - Este item prepara o terreno para o item `6`. Se quisermos fatiar pequeno, primeiro tipamos o feedback mantendo state; depois trocamos o transporte para eventos.
+- Entregue:
+  - `UiFeedback` criado em `presentation.common`
+  - `vehicles`, `refuels`, `maintenance` e `reports` migrados para feedback tipado
+  - snackbar global com cor semantica por tipo
 
 ### 2. Extrair cor de destaque para o tema
+Status: `Concluido`
 Impacto: `Medio`
 Esforco: `Baixo`
 
@@ -98,8 +115,12 @@ Esforco: `Baixo`
 #### Criterios de aceite
 - Nenhum componente de destaque usa `Color(0xFF2F81F7)` diretamente.
 - A mudanca de tom passa a exigir ajuste em um unico ponto.
+- Entregue:
+  - extensao `accentHighlight` no tema
+  - remocao dos hardcodes em `VehiclesScreen` e `VehicleSelectors`
 
 ### 3. Componentes Compose compartilhados
+Status: `Concluido`
 Impacto: `Alto`
 Esforco: `Baixo/Medio`
 
@@ -149,10 +170,17 @@ fun DateBrField(
 - Pelo menos `vehicles`, `refuels` e `reports` passam a usar os componentes compartilhados.
 - Configuracoes de teclado e estilo deixam de ser copiadas entre telas.
 - O comportamento visual permanece consistente.
+- Entregue:
+  - `DateBrField`
+  - `DecimalField`
+  - `MoneyField`
+  - aplicacao em `vehicles`, `refuels`, `maintenance`, `reports` e `FuelCalculatorScreen`
+  - suporte a `enabled` nos campos compartilhados para fluxos como o calculador
 
 ## Tier 2 - Media prioridade
 
 ### 4. Factory de ID centralizada no repositorio
+Status: `Parcial`
 Impacto: `Medio`
 Esforco: `Medio`
 
@@ -170,11 +198,17 @@ Esforco: `Medio`
 - Executar primeiro apenas o helper.
 - So partir para `autoGenerate` se houver motivacao concreta de sync, importacao ou interoperabilidade.
 
+#### Entregue ate agora
+- helper `nextIdOf` centralizado em `RoomRepositories.kt`
+- remocao da duplicacao local nos quatro pontos de insercao manual
+- sem alteracao de schema ou migration
+
 #### Riscos
 - Migracao de schema e revisao de importacao/snapshot.
 - Potencial impacto em restore, sync remoto e compatibilidade com dados legados.
 
 ### 5. Desacoplar `VehicleType.OTHER` de budget e relatorios
+Status: `Parcial`
 Impacto: `Medio/Alto`
 Esforco: `Medio/Alto`
 
@@ -199,7 +233,31 @@ Esforco: `Medio/Alto`
 - Ajuste de mapper local/remoto
 - Revisao de snapshot e importacao legada
 
+#### Entregue ate agora
+- helper `Settings.monthlyBudgetFor(vehicleType)` centralizando a leitura atual
+- `ReportsViewModel` deixou de depender diretamente das colunas `monthlyBudgetCar` e `monthlyBudgetMotorcycle`
+- `SettingsRepositoryImpl` passou a centralizar a escrita atual em helper unico
+- tabela `vehicle_budgets` criada no banco local
+- migration `3 -> 4` implementada com backfill de `CAR` e `MOTORCYCLE`
+- leitura de settings combinada com `vehicle_budgets`, habilitando budget real para `OTHER`
+- schema `4.json` exportado
+- testes cobrindo:
+  - politica atual para `CAR`, `MOTORCYCLE`, `OTHER` e `null`
+  - leitura de budget para `OTHER` no `ReportsViewModel`
+  - compilacao do AndroidTest de migration e backfill esperado
+- mapeamento de impacto confirmado em:
+  - `RoomMigrations`
+  - `RoomSnapshotDataSource`
+  - `LegacyImportManager`
+  - `EntityMappers`
+  - `ReportsViewModel`
+
+#### Pendente
+- decidir se budgets devem entrar em backup/snapshot remoto numa proxima etapa
+- avaliar se as colunas antigas em `settings` podem ser removidas numa migracao futura
+
 ### 6. Event channel para snackbars
+Status: `Concluido`
 Impacto: `Alto`
 Esforco: `Medio`
 
@@ -220,6 +278,11 @@ Esforco: `Medio`
 - Mensagens iguais podem ser exibidas em sequencia.
 - Eventos transitivos nao poluem mais o `UiState`.
 - `ClearFeedback` deixa de existir nas features migradas.
+- Entregue:
+  - `SharedFlow<UiFeedback>` em `vehicles`, `refuels` e `maintenance`
+  - `TecMotorsRoot` coletando eventos diretamente
+  - remocao de `ClearFeedback` nas features migradas
+  - teste cobrindo repeticao de mensagem
 
 ## Tier 3 - Baixa prioridade
 
@@ -255,6 +318,7 @@ Esforco: `Alto`
 - Evitar misturar essa migracao com itens de Compose no mesmo PR.
 
 ### 9. Cobertura de testes
+Status: `Em andamento`
 Impacto: `Alto`
 Esforco: `Baixo/Medio`
 
@@ -272,25 +336,36 @@ Esforco: `Baixo/Medio`
 #### Criterios de aceite
 - Cada refatoracao de comportamento vem acompanhada de teste no mesmo ciclo.
 - Casos de regressao dos itens `1`, `3` e `6` ficam cobertos.
+- Entregue ate agora:
+  - `VehiclesViewModelTest`: repeticao de feedback de sucesso via `SharedFlow`
+  - `RefuelsViewModelTest`: repeticao de feedback de erro via `SharedFlow`
+  - `MaintenanceViewModelTest`: repeticao de feedback de erro via `SharedFlow`
+  - `ReportsViewModelTest`: feedback tipado para periodo invalido e salvamento de orcamento
+  - `ReportUseCasesTest`: edge case com `liters = 0.0`
+  - correcao de regressao no `ReportsViewModel` para nao sobrescrever o input de orcamento no primeiro carregamento
 
 ## Fatiamento recomendado por PR
 
 ### PR 1 - Feedback tipado
+- Status: `Concluido`
 - Criar `UiFeedback`
 - Atualizar contratos e ViewModels
 - Ajustar `SnackbarHost` com cor semantica
 
 ### PR 2 - Tema e componentes compartilhados
+- Status: `Concluido`
 - Remover hardcodes de cor
 - Introduzir `DecimalField`, `MoneyField` e `DateBrField`
 - Aplicar em telas prioritarias
 
 ### PR 3 - Snackbars por evento
+- Status: `Concluido`
 - Introduzir `SharedFlow`
 - Remover `ClearFeedback`
 - Cobrir repeticao de eventos com teste
 
 ### PR 4 - Lacunas de teste
+- Status: `Em andamento`
 - Consolidar cobertura das refatoracoes anteriores
 
 ## Decisoes em aberto
@@ -300,11 +375,9 @@ Esforco: `Baixo/Medio`
 - O item `7` vale o custo agora ou o projeto ainda se beneficia de DI manual?
 
 ## Recomendacao pratica para o proximo passo
-Comecar pelo item `1`.
+Priorizar o item `9`.
 
 Motivos:
-- baixo risco
-- ganho visual imediato
-- reduz ambiguidade semantica
-- prepara o item `6`
-- toca poucos arquivos e tem rollback simples
+- protege o que ja foi entregue
+- fecha regressao do fluxo novo de snackbar por evento
+- melhora seguranca antes da proxima frente arquitetural

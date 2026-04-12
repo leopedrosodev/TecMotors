@@ -4,6 +4,7 @@ import androidx.compose.ui.graphics.Color
 
 val AutoBlueDark = Color(0xFF2F81F7)
 val AutoBlueLight = Color(0xFF1F5FC9)
+val FeedbackSuccess = Color(0xFF1F8F4C)
 
 val DarkBackground = Color(0xFF0B111B)
 val DarkSurface = Color(0xFF121A27)

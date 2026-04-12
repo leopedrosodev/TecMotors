@@ -62,7 +62,8 @@ class AppContainer(context: Context) {
     )
         .addMigrations(
             RoomMigrations.MIGRATION_1_2,
-            RoomMigrations.MIGRATION_2_3
+            RoomMigrations.MIGRATION_2_3,
+            RoomMigrations.MIGRATION_3_4
         )
         .build()
 

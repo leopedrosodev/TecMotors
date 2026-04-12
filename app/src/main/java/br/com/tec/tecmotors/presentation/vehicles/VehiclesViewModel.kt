@@ -7,12 +7,15 @@ import br.com.tec.tecmotors.domain.usecase.AddVehicleUseCase
 import br.com.tec.tecmotors.domain.usecase.ObserveOdometersUseCase
 import br.com.tec.tecmotors.domain.usecase.ObserveVehiclesUseCase
 import br.com.tec.tecmotors.domain.usecase.RenameVehicleUseCase
+import br.com.tec.tecmotors.presentation.common.UiFeedback
 import br.com.tec.tecmotors.presentation.common.parseDateBrOrIso
 import br.com.tec.tecmotors.presentation.common.parseDecimal
 import br.com.tec.tecmotors.presentation.common.todayBr
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
@@ -30,6 +33,8 @@ class VehiclesViewModel(
             dateText = todayBr()
         )
     )
+    private val _events = MutableSharedFlow<UiFeedback>(extraBufferCapacity = 1)
+    val events = _events.asSharedFlow()
 
     val uiState: StateFlow<VehiclesUiState> = combine(
         observeVehiclesUseCase(),
@@ -81,13 +86,13 @@ class VehiclesViewModel(
             is VehiclesUiEvent.SaveVehicleName -> {
                 val name = uiState.value.nameDrafts[event.vehicleId]?.trim().orEmpty()
                 if (name.isBlank()) {
-                    localState.update { it.copy(feedback = "Nome invalido") }
+                    emitFeedback(UiFeedback.Error("Nome invalido"))
                     return
                 }
 
                 viewModelScope.launch {
                     renameVehicleUseCase(event.vehicleId, name)
-                    localState.update { it.copy(feedback = "Nome atualizado") }
+                    emitFeedback(UiFeedback.Success("Nome atualizado"))
                 }
             }
 
@@ -96,7 +101,7 @@ class VehiclesViewModel(
                 val date = parseDateBrOrIso(state.dateText)
                 val odometer = parseDecimal(state.odometerText)
                 if (state.selectedVehicleId <= 0L || date == null || odometer == null) {
-                    localState.update { it.copy(feedback = "Preencha data e odometro corretamente") }
+                    emitFeedback(UiFeedback.Error("Preencha data e odometro corretamente"))
                     return
                 }
 
@@ -108,15 +113,11 @@ class VehiclesViewModel(
                     )
                     localState.update {
                         it.copy(
-                            odometerText = "",
-                            feedback = "Odometro registrado"
+                            odometerText = ""
                         )
                     }
+                    emitFeedback(UiFeedback.Success("Odometro registrado"))
                 }
-            }
-
-            VehiclesUiEvent.ClearFeedback -> {
-                localState.update { it.copy(feedback = null) }
             }
 
             is VehiclesUiEvent.ChangeNewVehicleName -> {
@@ -126,19 +127,25 @@ class VehiclesViewModel(
             is VehiclesUiEvent.AddVehicle -> {
                 val name = uiState.value.newVehicleName.trim()
                 if (name.isBlank()) {
-                    localState.update { it.copy(feedback = "Informe o nome do veiculo") }
+                    emitFeedback(UiFeedback.Error("Informe o nome do veiculo"))
                     return
                 }
                 viewModelScope.launch {
                     addVehicleUseCase(name, event.type)
                     localState.update {
                         it.copy(
-                            newVehicleName = "",
-                            feedback = "Veiculo adicionado"
+                            newVehicleName = ""
                         )
                     }
+                    emitFeedback(UiFeedback.Success("Veiculo adicionado"))
                 }
             }
+        }
+    }
+
+    private fun emitFeedback(feedback: UiFeedback) {
+        if (!_events.tryEmit(feedback)) {
+            viewModelScope.launch { _events.emit(feedback) }
         }
     }
 }

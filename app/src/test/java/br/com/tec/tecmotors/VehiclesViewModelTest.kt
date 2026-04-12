@@ -5,17 +5,22 @@ import br.com.tec.tecmotors.domain.model.Vehicle
 import br.com.tec.tecmotors.domain.model.VehicleType
 import br.com.tec.tecmotors.domain.repository.OdometerRepository
 import br.com.tec.tecmotors.domain.repository.VehicleRepository
+import br.com.tec.tecmotors.domain.usecase.AddVehicleUseCase
 import br.com.tec.tecmotors.domain.usecase.AddOdometerUseCase
 import br.com.tec.tecmotors.domain.usecase.ObserveOdometersUseCase
 import br.com.tec.tecmotors.domain.usecase.ObserveVehiclesUseCase
 import br.com.tec.tecmotors.domain.usecase.RenameVehicleUseCase
+import br.com.tec.tecmotors.presentation.common.UiFeedback
 import br.com.tec.tecmotors.presentation.vehicles.VehiclesUiEvent
 import br.com.tec.tecmotors.presentation.vehicles.VehiclesViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.take
+import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
@@ -29,7 +34,7 @@ class VehiclesViewModelTest {
     val mainDispatcherRule = MainDispatcherRule()
 
     @Test
-    fun saveVehicleName_updatesStateAndRepository() = runTest {
+    fun saveVehicleName_updatesStateAndRepository_andEmitsRepeatedFeedback() = runTest {
         val vehicleRepository = FakeVehicleRepository()
         val odometerRepository = FakeOdometerRepository()
 
@@ -37,19 +42,29 @@ class VehiclesViewModelTest {
             observeVehiclesUseCase = ObserveVehiclesUseCase(vehicleRepository),
             observeOdometersUseCase = ObserveOdometersUseCase(odometerRepository),
             renameVehicleUseCase = RenameVehicleUseCase(vehicleRepository),
-            addOdometerUseCase = AddOdometerUseCase(odometerRepository)
+            addOdometerUseCase = AddOdometerUseCase(odometerRepository),
+            addVehicleUseCase = AddVehicleUseCase(vehicleRepository)
         )
         val collectJob: Job = launch { viewModel.uiState.collect { } }
+        val feedbacksDeferred = async { viewModel.events.take(2).toList() }
 
         advanceUntilIdle()
         viewModel.onEvent(VehiclesUiEvent.ChangeVehicleName(1L, "Carro Novo"))
+        advanceUntilIdle()
+        viewModel.onEvent(VehiclesUiEvent.SaveVehicleName(1L))
         advanceUntilIdle()
         viewModel.onEvent(VehiclesUiEvent.SaveVehicleName(1L))
 
         advanceUntilIdle()
 
         assertEquals("Carro Novo", vehicleRepository.getVehicles().first().name)
-        assertEquals("Nome atualizado", viewModel.uiState.value.feedback)
+        assertEquals(
+            listOf(
+                UiFeedback.Success("Nome atualizado"),
+                UiFeedback.Success("Nome atualizado")
+            ),
+            feedbacksDeferred.await()
+        )
         collectJob.cancel()
     }
 
@@ -63,6 +78,11 @@ class VehiclesViewModelTest {
         override suspend fun getVehicles(): List<Vehicle> = vehicles.value
 
         override suspend fun ensureDefaultVehiclesIfEmpty() = Unit
+
+        override suspend fun addVehicle(name: String, type: VehicleType) {
+            val nextId = (vehicles.value.maxOfOrNull { it.id } ?: 0L) + 1L
+            vehicles.value = vehicles.value + Vehicle(nextId, name, type)
+        }
 
         override suspend fun renameVehicle(vehicleId: Long, name: String) {
             vehicles.value = vehicles.value.map { if (it.id == vehicleId) it.copy(name = name) else it }

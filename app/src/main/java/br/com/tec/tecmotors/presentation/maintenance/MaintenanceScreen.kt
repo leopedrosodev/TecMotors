@@ -11,7 +11,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Button
@@ -30,12 +29,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import br.com.tec.tecmotors.R
 import br.com.tec.tecmotors.domain.model.MaintenanceRecord
 import br.com.tec.tecmotors.domain.model.MaintenanceType
 import br.com.tec.tecmotors.domain.usecase.MaintenanceDueStatus
+import br.com.tec.tecmotors.presentation.common.DateBrField
+import br.com.tec.tecmotors.presentation.common.DecimalField
+import br.com.tec.tecmotors.presentation.common.MoneyField
 import br.com.tec.tecmotors.presentation.common.VehicleCardSelector
 import br.com.tec.tecmotors.presentation.common.formatCurrency
 import br.com.tec.tecmotors.presentation.common.formatDate
@@ -126,28 +127,23 @@ fun MaintenanceScreen(
             label = { Text(stringResource(R.string.label_maintenance_title)) },
             singleLine = true
         )
-        OutlinedTextField(
+        DateBrField(
             value = state.dueDateText,
             onValueChange = { onEvent(MaintenanceUiEvent.ChangeDueDate(it)) },
             modifier = Modifier.fillMaxWidth(),
-            label = { Text(stringResource(R.string.label_due_date_optional)) },
-            singleLine = true
+            label = stringResource(R.string.label_due_date_optional)
         )
-        OutlinedTextField(
+        DecimalField(
             value = state.dueKmText,
             onValueChange = { onEvent(MaintenanceUiEvent.ChangeDueKm(it)) },
             modifier = Modifier.fillMaxWidth(),
-            label = { Text(stringResource(R.string.label_due_km_optional)) },
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-            singleLine = true
+            label = stringResource(R.string.label_due_km_optional)
         )
-        OutlinedTextField(
+        MoneyField(
             value = state.estimatedCostText,
             onValueChange = { onEvent(MaintenanceUiEvent.ChangeEstimatedCost(it)) },
             modifier = Modifier.fillMaxWidth(),
-            label = { Text(stringResource(R.string.label_estimated_cost_optional)) },
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-            singleLine = true
+            label = stringResource(R.string.label_estimated_cost_optional)
         )
         OutlinedTextField(
             value = state.notesText,

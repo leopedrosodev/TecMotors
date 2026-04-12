@@ -9,6 +9,7 @@ import br.com.tec.tecmotors.data.local.entity.FuelRecordEntity
 import br.com.tec.tecmotors.data.local.entity.MaintenanceRecordEntity
 import br.com.tec.tecmotors.data.local.entity.OdometerRecordEntity
 import br.com.tec.tecmotors.data.local.entity.SettingsEntity
+import br.com.tec.tecmotors.data.local.entity.VehicleBudgetEntity
 import br.com.tec.tecmotors.data.local.entity.VehicleEntity
 import kotlinx.coroutines.flow.Flow
 
@@ -112,4 +113,16 @@ interface SettingsDao {
 
     @Update
     suspend fun update(settings: SettingsEntity)
+}
+
+@Dao
+interface VehicleBudgetDao {
+    @Query("SELECT * FROM vehicle_budgets")
+    fun observeAll(): Flow<List<VehicleBudgetEntity>>
+
+    @Query("SELECT * FROM vehicle_budgets")
+    suspend fun getAll(): List<VehicleBudgetEntity>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun upsert(entity: VehicleBudgetEntity)
 }

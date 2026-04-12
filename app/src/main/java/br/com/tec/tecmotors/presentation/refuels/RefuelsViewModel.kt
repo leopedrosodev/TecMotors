@@ -5,12 +5,15 @@ import androidx.lifecycle.viewModelScope
 import br.com.tec.tecmotors.domain.usecase.AddRefuelUseCase
 import br.com.tec.tecmotors.domain.usecase.ObserveRefuelsUseCase
 import br.com.tec.tecmotors.domain.usecase.ObserveVehiclesUseCase
+import br.com.tec.tecmotors.presentation.common.UiFeedback
 import br.com.tec.tecmotors.presentation.common.parseDateBrOrIso
 import br.com.tec.tecmotors.presentation.common.parseDecimal
 import br.com.tec.tecmotors.presentation.common.todayBr
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
@@ -22,6 +25,8 @@ class RefuelsViewModel(
     private val addRefuelUseCase: AddRefuelUseCase
 ) : ViewModel() {
     private val localState = MutableStateFlow(RefuelsUiState(dateText = todayBr()))
+    private val _events = MutableSharedFlow<UiFeedback>(extraBufferCapacity = 1)
+    val events = _events.asSharedFlow()
 
     val uiState: StateFlow<RefuelsUiState> = combine(
         observeVehiclesUseCase(),
@@ -82,7 +87,7 @@ class RefuelsViewModel(
                 val price = parseDecimal(state.priceText)
 
                 if (state.selectedVehicleId <= 0L || date == null || odometer == null || liters == null || price == null) {
-                    localState.update { it.copy(feedback = "Preencha todos os campos com valores validos") }
+                    emitFeedback(UiFeedback.Error("Preencha todos os campos com valores validos"))
                     return
                 }
 
@@ -102,14 +107,18 @@ class RefuelsViewModel(
                             odometerText = "",
                             litersText = "",
                             priceText = "",
-                            receiptImageUri = null,
-                            feedback = "Abastecimento salvo"
+                            receiptImageUri = null
                         )
                     }
+                    emitFeedback(UiFeedback.Success("Abastecimento salvo"))
                 }
             }
+        }
+    }
 
-            RefuelsUiEvent.ClearFeedback -> localState.update { it.copy(feedback = null) }
+    private fun emitFeedback(feedback: UiFeedback) {
+        if (!_events.tryEmit(feedback)) {
+            viewModelScope.launch { _events.emit(feedback) }
         }
     }
 }

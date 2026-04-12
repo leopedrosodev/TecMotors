@@ -27,6 +27,37 @@ object RoomMigrations {
         }
     }
 
+    val MIGRATION_3_4 = object : Migration(3, 4) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            db.execSQL(
+                """
+                CREATE TABLE IF NOT EXISTS `vehicle_budgets` (
+                  `vehicleType` TEXT NOT NULL,
+                  `amount` REAL NOT NULL,
+                  PRIMARY KEY(`vehicleType`)
+                )
+                """.trimIndent()
+            )
+
+            db.execSQL(
+                """
+                INSERT OR REPLACE INTO `vehicle_budgets` (`vehicleType`, `amount`)
+                SELECT 'CAR', COALESCE(`monthlyBudgetCar`, 0)
+                FROM `settings`
+                WHERE `id` = 1
+                """.trimIndent()
+            )
+            db.execSQL(
+                """
+                INSERT OR REPLACE INTO `vehicle_budgets` (`vehicleType`, `amount`)
+                SELECT 'MOTORCYCLE', COALESCE(`monthlyBudgetMotorcycle`, 0)
+                FROM `settings`
+                WHERE `id` = 1
+                """.trimIndent()
+            )
+        }
+    }
+
     private fun recreateVehicles(database: SupportSQLiteDatabase) {
         val legacy = renameIfExists(database, "vehicles")
         database.execSQL(

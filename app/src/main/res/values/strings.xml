@@ -12,8 +12,16 @@
     <string name="content_desc_theme_light">Mudar para tema claro</string>
     <string name="content_desc_theme_dark">Mudar para tema escuro</string>
 
-    <string name="title_vehicles">Cadastro de veiculos</string>
-    <string name="desc_vehicles_intro">Os dois veiculos ja ficam cadastrados localmente no seu celular.</string>
+    <string name="title_vehicles">Meus veiculos</string>
+    <string name="desc_vehicles_intro">Adicione e gerencie seus veiculos.</string>
+    <string name="title_add_vehicle">Adicionar veiculo</string>
+    <string name="label_new_vehicle_name">Nome do veiculo</string>
+    <string name="action_add_car">Carro</string>
+    <string name="action_add_moto">Moto</string>
+    <string name="action_add_other">Outro</string>
+    <string name="hint_other_vehicle">Ex: Caminhao, Trator, Van…</string>
+    <string name="feedback_vehicle_added">Veiculo adicionado</string>
+    <string name="feedback_vehicle_name_required">Informe o nome do veiculo</string>
     <string name="label_vehicle_name">Nome do veiculo</string>
     <string name="action_save_name">Salvar nome</string>
     <string name="label_register_odometer">Registrar odometro</string>

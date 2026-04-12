@@ -1,7 +1,31 @@
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+import java.util.Properties
+
+// --------------- Auto-versioning ---------------
+val versionPropsFile = file("version.properties")
+val versionProps = Properties().apply {
+    if (versionPropsFile.exists()) {
+        versionPropsFile.inputStream().use { load(it) }
+    }
+}
+val appVersionCode = versionProps.getProperty("versionCode", "9").toInt()
+val appVersionMajor = versionProps.getProperty("versionMajor", "1").toInt()
+val appVersionMinor = versionProps.getProperty("versionMinor", "3").toInt()
+val appVersionPatch = versionProps.getProperty("versionPatch", "1").toInt()
+val appVersionName = "$appVersionMajor.$appVersionMinor.$appVersionPatch"
+// -----------------------------------------------
+
 plugins {
     alias(libs.plugins.android.application)
+    alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.ksp)
+}
+
+kotlin {
+    compilerOptions {
+        jvmTarget.set(JvmTarget.JVM_11)
+    }
 }
 
 // Enables official Firebase resource generation when google-services.json is present.
@@ -21,8 +45,8 @@ android {
         applicationId = "br.com.tec.tecmotors"
         minSdk = 24
         targetSdk = 36
-        versionCode = 8
-        versionName = "1.3.0"
+        versionCode = appVersionCode
+        versionName = appVersionName
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -43,6 +67,35 @@ android {
     }
     buildFeatures {
         compose = true
+    }
+
+    applicationVariants.all {
+        val variant = this
+        outputs.all {
+            (this as com.android.build.gradle.internal.api.BaseVariantOutputImpl).outputFileName =
+                "TecMotors-v${variant.versionName}-build${variant.versionCode}-${variant.buildType.name}.apk"
+        }
+    }
+}
+
+// Auto-increment version after successful assemble
+tasks.configureEach {
+    if (name == "assembleDebug" || name == "assembleRelease") {
+        doLast {
+            val props = Properties().apply {
+                versionPropsFile.inputStream().use { load(it) }
+            }
+            val newCode = props.getProperty("versionCode").toInt() + 1
+            val newPatch = props.getProperty("versionPatch").toInt() + 1
+            val major = props.getProperty("versionMajor")
+            val minor = props.getProperty("versionMinor")
+            props.setProperty("versionCode", newCode.toString())
+            props.setProperty("versionPatch", newPatch.toString())
+            versionPropsFile.writeText(
+                "versionCode=$newCode\nversionMajor=$major\nversionMinor=$minor\nversionPatch=$newPatch\n"
+            )
+            println(">> TecMotors version bumped: versionCode=$newCode, versionName=$major.$minor.$newPatch")
+        }
     }
 }
 

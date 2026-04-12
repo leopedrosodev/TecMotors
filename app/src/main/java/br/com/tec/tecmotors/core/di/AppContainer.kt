@@ -22,6 +22,7 @@ import br.com.tec.tecmotors.domain.repository.SnapshotRepository
 import br.com.tec.tecmotors.domain.repository.SyncRepository
 import br.com.tec.tecmotors.domain.repository.VehicleRepository
 import br.com.tec.tecmotors.domain.usecase.AddMaintenanceUseCase
+import br.com.tec.tecmotors.domain.usecase.AddVehicleUseCase
 import br.com.tec.tecmotors.domain.usecase.CalculateComponentHealthUseCase
 import br.com.tec.tecmotors.domain.usecase.AddOdometerUseCase
 import br.com.tec.tecmotors.domain.usecase.AddRefuelUseCase
@@ -111,6 +112,7 @@ class AppContainer(context: Context) {
 
     val observeVehiclesUseCase = ObserveVehiclesUseCase(vehicleRepository)
     val ensureDefaultVehiclesUseCase = EnsureDefaultVehiclesUseCase(vehicleRepository)
+    val addVehicleUseCase = AddVehicleUseCase(vehicleRepository)
     val renameVehicleUseCase = RenameVehicleUseCase(vehicleRepository)
     val observeOdometersUseCase = ObserveOdometersUseCase(odometerRepository)
     val addOdometerUseCase = AddOdometerUseCase(odometerRepository)

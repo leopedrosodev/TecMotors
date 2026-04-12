@@ -47,6 +47,12 @@ class VehicleRepositoryImpl(
         settingsRepository.touchDataUpdatedAt()
     }
 
+    override suspend fun addVehicle(name: String, type: VehicleType) {
+        val nextId = (database.vehicleDao().maxId() ?: 0L) + 1L
+        database.vehicleDao().upsert(VehicleEntity(id = nextId, name = name.trim(), type = type.name))
+        settingsRepository.touchDataUpdatedAt()
+    }
+
     override suspend fun renameVehicle(vehicleId: Long, name: String) {
         database.vehicleDao().updateName(vehicleId, name.trim())
         settingsRepository.touchDataUpdatedAt()
@@ -195,6 +201,7 @@ class SettingsRepositoryImpl(
         val updated = when (vehicleType) {
             VehicleType.CAR -> current.copy(monthlyBudgetCar = normalized)
             VehicleType.MOTORCYCLE -> current.copy(monthlyBudgetMotorcycle = normalized)
+            VehicleType.OTHER -> return
         }
         database.settingsDao().upsert(updated)
     }

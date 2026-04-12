@@ -150,7 +150,7 @@ class ReportsViewModel(
         val budgetValue = when (selectedVehicle?.type) {
             VehicleType.CAR -> settings.monthlyBudgetCar
             VehicleType.MOTORCYCLE -> settings.monthlyBudgetMotorcycle
-            null -> 0.0
+            VehicleType.OTHER, null -> 0.0
         }
 
         val shouldHydrateBudgetField = state.budgetInputText.isBlank() || selected != previousSelected

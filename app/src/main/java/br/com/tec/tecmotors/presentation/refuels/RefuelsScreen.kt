@@ -175,10 +175,6 @@ fun RefuelsScreen(
             Text(stringResource(R.string.action_save_refuel))
         }
 
-        state.feedback?.let {
-            Text(it, color = MaterialTheme.colorScheme.primary)
-        }
-
         HorizontalDivider(modifier = Modifier.padding(top = 8.dp, bottom = 8.dp))
         Text(stringResource(R.string.title_latest_refuels), style = MaterialTheme.typography.titleMedium)
 

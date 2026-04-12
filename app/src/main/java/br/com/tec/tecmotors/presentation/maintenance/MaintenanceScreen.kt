@@ -178,10 +178,6 @@ fun MaintenanceScreen(
             Text(stringResource(R.string.action_save_maintenance))
         }
 
-        state.feedback?.let {
-            Text(it, color = MaterialTheme.colorScheme.primary)
-        }
-
         HorizontalDivider(modifier = Modifier.padding(top = 8.dp, bottom = 8.dp))
         Text(stringResource(R.string.title_vehicle_planning), style = MaterialTheme.typography.titleMedium)
 

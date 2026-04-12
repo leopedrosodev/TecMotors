@@ -133,10 +133,9 @@ private fun MaintenanceRecord.toShared(): SharedMaintenanceRecord = SharedMainte
     done = done
 )
 
-private val SharedMaintenanceDueStatus.toDomain: MaintenanceDueStatus
-    get() = when (this) {
-        SharedMaintenanceDueStatus.DONE -> MaintenanceDueStatus.DONE
-        SharedMaintenanceDueStatus.OVERDUE -> MaintenanceDueStatus.OVERDUE
-        SharedMaintenanceDueStatus.DUE_SOON -> MaintenanceDueStatus.DUE_SOON
-        SharedMaintenanceDueStatus.ON_TRACK -> MaintenanceDueStatus.ON_TRACK
-    }
+private fun SharedMaintenanceDueStatus.toDomain(): MaintenanceDueStatus = when (this) {
+    SharedMaintenanceDueStatus.DONE -> MaintenanceDueStatus.DONE
+    SharedMaintenanceDueStatus.OVERDUE -> MaintenanceDueStatus.OVERDUE
+    SharedMaintenanceDueStatus.DUE_SOON -> MaintenanceDueStatus.DUE_SOON
+    SharedMaintenanceDueStatus.ON_TRACK -> MaintenanceDueStatus.ON_TRACK
+}

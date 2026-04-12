@@ -16,6 +16,7 @@ interface VehicleRepository {
     fun observeVehicles(): Flow<List<Vehicle>>
     suspend fun getVehicles(): List<Vehicle>
     suspend fun ensureDefaultVehiclesIfEmpty()
+    suspend fun addVehicle(name: String, type: VehicleType)
     suspend fun renameVehicle(vehicleId: Long, name: String)
 }
 

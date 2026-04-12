@@ -2,7 +2,8 @@ package br.com.tec.tecmotors.domain.model
 
 enum class VehicleType(val label: String) {
     CAR("Carro"),
-    MOTORCYCLE("Moto")
+    MOTORCYCLE("Moto"),
+    OTHER("Outro")
 }
 
 enum class FuelUsageType(val label: String) {

@@ -12,6 +12,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.DirectionsCar
+import androidx.compose.material.icons.filled.LocalShipping
 import androidx.compose.material.icons.filled.TwoWheeler
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -83,10 +84,10 @@ fun VehicleCardSelector(
             ) {
                 Column(modifier = Modifier.padding(12.dp)) {
                     Icon(
-                        imageVector = if (vehicle.type == VehicleType.CAR) {
-                            Icons.Filled.DirectionsCar
-                        } else {
-                            Icons.Filled.TwoWheeler
+                        imageVector = when (vehicle.type) {
+                            VehicleType.CAR -> Icons.Filled.DirectionsCar
+                            VehicleType.MOTORCYCLE -> Icons.Filled.TwoWheeler
+                            VehicleType.OTHER -> Icons.Filled.LocalShipping
                         },
                         contentDescription = vehicle.type.label,
                         tint = if (selected) selectedBlue else MaterialTheme.colorScheme.onSurface

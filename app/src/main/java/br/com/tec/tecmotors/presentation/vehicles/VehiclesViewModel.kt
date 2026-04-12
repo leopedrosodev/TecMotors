@@ -3,6 +3,7 @@ package br.com.tec.tecmotors.presentation.vehicles
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import br.com.tec.tecmotors.domain.usecase.AddOdometerUseCase
+import br.com.tec.tecmotors.domain.usecase.AddVehicleUseCase
 import br.com.tec.tecmotors.domain.usecase.ObserveOdometersUseCase
 import br.com.tec.tecmotors.domain.usecase.ObserveVehiclesUseCase
 import br.com.tec.tecmotors.domain.usecase.RenameVehicleUseCase
@@ -21,7 +22,8 @@ class VehiclesViewModel(
     private val observeVehiclesUseCase: ObserveVehiclesUseCase,
     private val observeOdometersUseCase: ObserveOdometersUseCase,
     private val renameVehicleUseCase: RenameVehicleUseCase,
-    private val addOdometerUseCase: AddOdometerUseCase
+    private val addOdometerUseCase: AddOdometerUseCase,
+    private val addVehicleUseCase: AddVehicleUseCase
 ) : ViewModel() {
     private val localState = MutableStateFlow(
         VehiclesUiState(
@@ -115,6 +117,27 @@ class VehiclesViewModel(
 
             VehiclesUiEvent.ClearFeedback -> {
                 localState.update { it.copy(feedback = null) }
+            }
+
+            is VehiclesUiEvent.ChangeNewVehicleName -> {
+                localState.update { it.copy(newVehicleName = event.value) }
+            }
+
+            is VehiclesUiEvent.AddVehicle -> {
+                val name = uiState.value.newVehicleName.trim()
+                if (name.isBlank()) {
+                    localState.update { it.copy(feedback = "Informe o nome do veiculo") }
+                    return
+                }
+                viewModelScope.launch {
+                    addVehicleUseCase(name, event.type)
+                    localState.update {
+                        it.copy(
+                            newVehicleName = "",
+                            feedback = "Veiculo adicionado"
+                        )
+                    }
+                }
             }
         }
     }

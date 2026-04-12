@@ -20,6 +20,9 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.ScrollableTabRow
+import androidx.compose.material3.Snackbar
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -91,7 +94,8 @@ fun TecMotorsRoot(appContainer: AppContainer) {
                     observeVehiclesUseCase = appContainer.observeVehiclesUseCase,
                     observeOdometersUseCase = appContainer.observeOdometersUseCase,
                     renameVehicleUseCase = appContainer.renameVehicleUseCase,
-                    addOdometerUseCase = appContainer.addOdometerUseCase
+                    addOdometerUseCase = appContainer.addOdometerUseCase,
+                    addVehicleUseCase = appContainer.addVehicleUseCase
                 )
             }
         }
@@ -215,6 +219,33 @@ fun TecMotorsRoot(appContainer: AppContainer) {
         }
     }
 
+    val snackbarHostState = remember { SnackbarHostState() }
+
+    LaunchedEffect(vehiclesState.feedback) {
+        vehiclesState.feedback?.let {
+            snackbarHostState.showSnackbar(it)
+            vehiclesViewModel.onEvent(
+                br.com.tec.tecmotors.presentation.vehicles.VehiclesUiEvent.ClearFeedback
+            )
+        }
+    }
+    LaunchedEffect(refuelsState.feedback) {
+        refuelsState.feedback?.let {
+            snackbarHostState.showSnackbar(it)
+            refuelsViewModel.onEvent(
+                br.com.tec.tecmotors.presentation.refuels.RefuelsUiEvent.ClearFeedback
+            )
+        }
+    }
+    LaunchedEffect(maintenanceState.feedback) {
+        maintenanceState.feedback?.let {
+            snackbarHostState.showSnackbar(it)
+            maintenanceViewModel.onEvent(
+                br.com.tec.tecmotors.presentation.maintenance.MaintenanceUiEvent.ClearFeedback
+            )
+        }
+    }
+
     TecMotorsTheme(darkTheme = appState.darkThemeEnabled) {
         if (appState.showIntro) {
             IntroPresentationScreen(isDarkTheme = appState.darkThemeEnabled)
@@ -224,6 +255,15 @@ fun TecMotorsRoot(appContainer: AppContainer) {
         Scaffold(
             modifier = Modifier.fillMaxSize(),
             containerColor = MaterialTheme.colorScheme.background,
+            snackbarHost = {
+                SnackbarHost(hostState = snackbarHostState) { data ->
+                    Snackbar(
+                        snackbarData = data,
+                        containerColor = MaterialTheme.colorScheme.primary,
+                        contentColor = MaterialTheme.colorScheme.onPrimary
+                    )
+                }
+            },
             topBar = {
                 TopAppBar(
                     colors = TopAppBarDefaults.topAppBarColors(

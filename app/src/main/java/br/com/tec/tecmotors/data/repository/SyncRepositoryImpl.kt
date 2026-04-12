@@ -15,12 +15,21 @@ class SyncRepositoryImpl(
     private val context: Context,
     private val snapshotRepository: SnapshotRepository
 ) : SyncRepository {
+    private val firebaseAvailable: Boolean by lazy {
+        FirebaseApp.getApps(context).isNotEmpty() || FirebaseApp.initializeApp(context) != null
+    }
     private val auth: FirebaseAuth by lazy { FirebaseAuth.getInstance() }
     private val firestore: FirebaseFirestore by lazy { FirebaseFirestore.getInstance() }
 
-    override fun currentUserEmail(): String? = auth.currentUser?.email
+    override fun currentUserEmail(): String? {
+        if (!firebaseAvailable) return null
+        return auth.currentUser?.email
+    }
 
-    override fun isSignedIn(): Boolean = auth.currentUser != null
+    override fun isSignedIn(): Boolean {
+        if (!firebaseAvailable) return false
+        return auth.currentUser != null
+    }
 
     override suspend fun signInWithGoogleIdToken(idToken: String): Result<String> {
         return runCatching {

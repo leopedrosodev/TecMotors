@@ -47,6 +47,13 @@ fun formatNumber(value: Double): String {
     return formatter.format(value)
 }
 
+/** Numero sem casas decimais - usado para km, que nao precisa de centavos. */
+fun formatInteger(value: Double): String {
+    val formatter = NumberFormat.getNumberInstance(ptBrLocale)
+    formatter.maximumFractionDigits = 0
+    return formatter.format(value)
+}
+
 fun formatCurrency(value: Double): String {
     return NumberFormat.getCurrencyInstance(ptBrLocale).format(value)
 }

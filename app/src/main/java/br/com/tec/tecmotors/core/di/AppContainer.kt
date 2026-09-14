@@ -7,6 +7,7 @@ import br.com.tec.tecmotors.data.local.TecMotorsDatabase
 import br.com.tec.tecmotors.data.local.migration.LegacyImportManager
 import br.com.tec.tecmotors.data.local.migration.LegacyPreferencesReader
 import br.com.tec.tecmotors.data.local.migration.RoomMigrations
+import br.com.tec.tecmotors.core.startup.AppStartup
 import br.com.tec.tecmotors.data.repository.MaintenanceRepositoryImpl
 import br.com.tec.tecmotors.data.repository.OdometerRepositoryImpl
 import br.com.tec.tecmotors.data.repository.RefuelRepositoryImpl
@@ -32,6 +33,7 @@ import br.com.tec.tecmotors.domain.usecase.CalculateMonthlyMetricsUseCase
 import br.com.tec.tecmotors.domain.usecase.CalculatePeriodReportUseCase
 import br.com.tec.tecmotors.domain.usecase.CalculateVehicleSummaryUseCase
 import br.com.tec.tecmotors.domain.usecase.CurrentSyncUserUseCase
+import br.com.tec.tecmotors.domain.usecase.DecideRemindersUseCase
 import br.com.tec.tecmotors.domain.usecase.DownloadRemoteStateUseCase
 import br.com.tec.tecmotors.domain.usecase.EnsureDefaultVehiclesUseCase
 import br.com.tec.tecmotors.domain.usecase.GetLocalSnapshotUseCase
@@ -60,11 +62,7 @@ class AppContainer(context: Context) {
         TecMotorsDatabase::class.java,
         "tec_motors.db"
     )
-        .addMigrations(
-            RoomMigrations.MIGRATION_1_2,
-            RoomMigrations.MIGRATION_2_3,
-            RoomMigrations.MIGRATION_3_4
-        )
+        .addMigrations(*RoomMigrations.ALL)
         .build()
 
     private val settingsRepository: SettingsRepository = SettingsRepositoryImpl(database)
@@ -113,6 +111,7 @@ class AppContainer(context: Context) {
 
     val observeVehiclesUseCase = ObserveVehiclesUseCase(vehicleRepository)
     val ensureDefaultVehiclesUseCase = EnsureDefaultVehiclesUseCase(vehicleRepository)
+
     val addVehicleUseCase = AddVehicleUseCase(vehicleRepository)
     val renameVehicleUseCase = RenameVehicleUseCase(vehicleRepository)
     val observeOdometersUseCase = ObserveOdometersUseCase(odometerRepository)
@@ -142,4 +141,11 @@ class AppContainer(context: Context) {
     val downloadRemoteStateUseCase = DownloadRemoteStateUseCase(syncRepository)
     val syncNowUseCase = SyncNowUseCase(syncRepository)
     val currentSyncUserUseCase = CurrentSyncUserUseCase(syncRepository)
+
+    val decideRemindersUseCase = DecideRemindersUseCase()
+
+    val appStartup = AppStartup(
+        legacyImportManager = legacyImportManager,
+        ensureDefaultVehiclesUseCase = ensureDefaultVehiclesUseCase
+    )
 }

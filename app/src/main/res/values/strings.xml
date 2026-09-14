@@ -218,4 +218,60 @@
     <string name="sync_msg_need_login">Faca login com Google antes de sincronizar.</string>
     <string name="sync_msg_no_backup">Nenhum backup remoto encontrado para esta conta.</string>
     <string name="sync_msg_missing_firebase">Firebase nao configurado. Adicione o arquivo app/google-services.json e sincronize o projeto.</string>
+
+    <!-- Shell / navegacao -->
+    <string name="tab_home">Resumo</string>
+    <string name="action_back">Voltar</string>
+    <string name="action_quick_refuel">Abastecer</string>
+
+    <!-- Tela inicial -->
+    <string name="home_manage_vehicles">Gerenciar</string>
+    <string name="home_month_spend">Gasto de %1$s</string>
+    <string name="home_budget_total">Orçamento %1$s</string>
+    <string name="home_budget_remaining">Restam %1$s</string>
+    <string name="home_budget_exceeded">%1$s acima</string>
+    <string name="home_budget_missing">Defina um orçamento em Relatórios para acompanhar o quanto falta.</string>
+    <string name="home_alert_maintenance_due">%1$s em %2$s km</string>
+    <string name="home_alert_maintenance_overdue">%1$s venceu há %2$s km</string>
+    <string name="home_alert_maintenance_detail">Vence em %1$s km · você está em %2$s km</string>
+    <string name="home_odometer_value">%1$s km</string>
+    <string name="home_odometer_never">Nenhuma leitura registrada</string>
+    <string name="home_odometer_today">Atualizado hoje</string>
+    <string name="home_odometer_yesterday">Atualizado ontem</string>
+    <string name="home_odometer_days_ago">Atualizado há %1$d dias</string>
+    <string name="home_update_odometer">Atualizar</string>
+    <string name="home_stat_km_per_liter">km/L no mês</string>
+    <string name="home_stat_distance">km no mês</string>
+    <string name="home_stat_cost_per_km">por km</string>
+    <string name="home_recent_title">Últimos registros</string>
+    <string name="home_see_all">Ver tudo</string>
+    <string name="home_empty_title">Nada registrado ainda</string>
+    <string name="home_empty_detail">Toque em Abastecer para lançar o primeiro. São três campos.</string>
+
+    <!-- Registro rapido -->
+    <string name="quick_refuel_title">Novo abastecimento</string>
+    <string name="quick_refuel_total_paid">Valor pago</string>
+    <string name="quick_refuel_liters">Litros</string>
+    <string name="quick_refuel_odometer">Odômetro</string>
+    <string name="quick_refuel_previous_odometer">Anterior: %1$s km</string>
+    <string name="quick_refuel_price_per_liter">%1$s por litro</string>
+    <string name="quick_refuel_distance_since">%1$s km desde o último</string>
+    <string name="quick_refuel_km_per_liter">%1$s km/L</string>
+    <string name="quick_refuel_more_fields">Posto, tipo de uso, recibo</string>
+    <string name="quick_refuel_footnote">Posto e tipo de uso repetem o último abastecimento. Dá para mudar depois.</string>
+
+    <!-- Lembretes com acao -->
+    <string name="notif_action_register_now">Registrar agora</string>
+    <string name="notif_action_not_refueled">Não abasteci</string>
+    <string name="notif_action_already_done">Já troquei</string>
+    <string name="notif_action_details">Ver detalhes</string>
+    <string name="notif_action_snooze">Adiar</string>
+    <string name="notif_title_no_recent_refuel">%1$d dias sem registrar abastecimento</string>
+    <string name="notif_text_no_recent_refuel">Seu último foi em %1$s. Sem os dados o app não calcula consumo nem prevê manutenção.</string>
+    <string name="notif_text_no_recent_refuel_no_station">Sem os dados o app não calcula consumo nem prevê manutenção.</string>
+    <string name="notif_title_maintenance_due">%1$s: %2$s em %3$s km</string>
+    <string name="notif_title_maintenance_overdue">%1$s: %2$s venceu há %3$s km</string>
+    <string name="notif_text_maintenance_due">Vence em %1$s km e você está em %2$s km.</string>
+    <string name="notif_title_month_end_odometer">Fecha o mês: falta o odômetro</string>
+    <string name="notif_text_month_end_odometer">Sem a leitura de fim de mês o relatório fica sem os km rodados de %1$s.</string>
 </resources>

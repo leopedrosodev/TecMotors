@@ -327,4 +327,7 @@ object RoomMigrations {
         if (hasColumn(database, tableName, columnName)) return
         database.execSQL("ALTER TABLE `$tableName` ADD COLUMN `$columnName` $columnDefinition")
     }
+
+    /** Fonte unica das migracoes: quem abre o banco usa esta lista. */
+    val ALL: Array<Migration> = arrayOf(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4)
 }

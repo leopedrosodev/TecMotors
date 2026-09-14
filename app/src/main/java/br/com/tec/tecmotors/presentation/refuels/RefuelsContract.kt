@@ -10,10 +10,17 @@ sealed interface RefuelsUiEvent {
     data class ChangeOdometer(val value: String) : RefuelsUiEvent
     data class ChangeLiters(val value: String) : RefuelsUiEvent
     data class ChangePrice(val value: String) : RefuelsUiEvent
+    data class ChangeTotalPaid(val value: String) : RefuelsUiEvent
     data class ChangeStation(val value: String) : RefuelsUiEvent
     data class SelectUsageType(val value: FuelUsageType) : RefuelsUiEvent
     data class SetReceiptImageUri(val value: String?) : RefuelsUiEvent
     data object SaveRefuel : RefuelsUiEvent
+
+    /** Salva a partir de valor pago + litros + odometro. Preco/L e calculado. */
+    data object SaveQuickRefuel : RefuelsUiEvent
+
+    /** Limpa o rascunho do registro rapido sem gravar nada. */
+    data object DiscardQuickRefuel : RefuelsUiEvent
 }
 
 data class StationInsight(
@@ -30,9 +37,19 @@ data class RefuelsUiState(
     val odometerText: String = "",
     val litersText: String = "",
     val priceText: String = "",
+    val totalPaidText: String = "",
     val stationText: String = "",
     val selectedUsageType: FuelUsageType = FuelUsageType.MIXED,
     val receiptImageUri: String? = null,
     val stationInsights: List<StationInsight> = emptyList(),
-    val suggestedStationName: String? = null
-)
+    val suggestedStationName: String? = null,
+    // --- derivados para o registro rapido ---
+    val lastOdometerKm: Double? = null,
+    val lastStationName: String = "",
+    val computedPricePerLiter: Double? = null,
+    val distanceSinceLastKm: Double? = null,
+    val estimatedKmPerLiter: Double? = null
+) {
+    val quickEntryReady: Boolean
+        get() = selectedVehicleId > 0L && computedPricePerLiter != null
+}

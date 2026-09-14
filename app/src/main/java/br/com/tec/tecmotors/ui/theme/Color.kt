@@ -6,6 +6,14 @@ val AutoBlueDark = Color(0xFF2F81F7)
 val AutoBlueLight = Color(0xFF1F5FC9)
 val FeedbackSuccess = Color(0xFF1F8F4C)
 
+// Ambar de atencao: manutencao perto do vencimento, orcamento estourando.
+val AttentionDark = Color(0xFFE6A23C)
+val AttentionContainerDark = Color(0xFF2A1C10)
+val OnAttentionContainerDark = Color(0xFFF0C282)
+val AttentionLight = Color(0xFF9A6512)
+val AttentionContainerLight = Color(0xFFFDF3E2)
+val OnAttentionContainerLight = Color(0xFF7A4E12)
+
 val DarkBackground = Color(0xFF0B111B)
 val DarkSurface = Color(0xFF121A27)
 val DarkSurfaceContainer = Color(0xFF1A2638)

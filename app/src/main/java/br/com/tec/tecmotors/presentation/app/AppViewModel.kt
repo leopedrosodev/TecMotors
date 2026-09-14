@@ -2,11 +2,8 @@ package br.com.tec.tecmotors.presentation.app
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import br.com.tec.tecmotors.data.local.migration.LegacyImportManager
-import br.com.tec.tecmotors.domain.usecase.EnsureDefaultVehiclesUseCase
 import br.com.tec.tecmotors.domain.usecase.ObserveDarkThemeUseCase
 import br.com.tec.tecmotors.domain.usecase.SetDarkThemeUseCase
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -15,11 +12,15 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
+/**
+ * Estado do shell: tema, destino atual e overlays.
+ *
+ * O preparo de dados da abertura vive em `core/startup/AppStartup` - a splash
+ * do sistema e quem espera por ele, nao esta tela.
+ */
 class AppViewModel(
     private val observeDarkThemeUseCase: ObserveDarkThemeUseCase,
-    private val setDarkThemeUseCase: SetDarkThemeUseCase,
-    private val ensureDefaultVehiclesUseCase: EnsureDefaultVehiclesUseCase,
-    private val legacyImportManager: LegacyImportManager
+    private val setDarkThemeUseCase: SetDarkThemeUseCase
 ) : ViewModel() {
     private val localState = MutableStateFlow(AppUiState())
 
@@ -34,37 +35,28 @@ class AppViewModel(
         initialValue = AppUiState()
     )
 
-    init {
-        viewModelScope.launch {
-            legacyImportManager.importIfNeeded()
-            ensureDefaultVehiclesUseCase()
-        }
-
-        viewModelScope.launch {
-            delay(2200)
-            localState.update { it.copy(showIntro = false) }
-        }
-    }
-
     fun onEvent(event: AppUiEvent) {
         when (event) {
             is AppUiEvent.ToggleTheme -> {
                 viewModelScope.launch {
-                    val current = uiState.value.darkThemeEnabled
-                    setDarkThemeUseCase(!current)
+                    setDarkThemeUseCase(!uiState.value.darkThemeEnabled)
                 }
             }
 
-            is AppUiEvent.DismissIntro -> {
-                localState.update { it.copy(showIntro = false) }
+            is AppUiEvent.Navigate -> {
+                localState.update { it.copy(destination = event.destination) }
             }
 
-            is AppUiEvent.SelectTab -> {
-                localState.update { it.copy(selectedTabIndex = event.index) }
+            is AppUiEvent.NavigateBack -> {
+                localState.update { it.copy(destination = AppDestination.HOME) }
             }
 
             is AppUiEvent.SetAccountDialogVisible -> {
                 localState.update { it.copy(showAccountDialog = event.visible) }
+            }
+
+            is AppUiEvent.SetQuickRefuelVisible -> {
+                localState.update { it.copy(showQuickRefuel = event.visible) }
             }
         }
     }

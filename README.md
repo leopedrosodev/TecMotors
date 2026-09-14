@@ -1,20 +1,20 @@
 # TecMotors
 
 App Android nativo para controle de carro e moto, com foco em:
-- consumo de combustivel
-- gasto semanal/mensal
-- distancia percorrida
-- quantidade de abastecimentos
+- tela de resumo: gasto do mes vs. orcamento, km/L, custo por km, o que esta vencendo
+- registro rapido de abastecimento (valor pago + litros + odometro)
+- consumo de combustivel e distancia percorrida
 - manutencao preventiva com dashboard de saude dos componentes
 - calculadora de combustivel
-- lembretes no inicio e fim do mes
+- lembretes condicionais com acao direta na notificacao
 - login Google + sincronizacao na nuvem (opcional)
 
-Versao atual: `1.3.0 (8)`
+Versao atual: veja `app/version.properties` (incrementa a cada build).
 
 ## Stack
 - Kotlin
 - Jetpack Compose (Material 3)
+- Core SplashScreen (abertura)
 - Room (persistencia local)
 - Firebase Auth + Firestore (sync opcional)
 - AlarmManager + Notification
@@ -25,14 +25,35 @@ Versao atual: `1.3.0 (8)`
 - DI manual com `AppContainer`
 - telas por feature com `UiState` + `UiEvent`
 - sem acesso direto da UI a persistencia/cloud
+- navegacao por barra inferior (Resumo, Manutencao, Relatorios, Veiculos) + FAB de registro rapido
 
 Detalhes: `docs/ARCHITECTURE.md`
 
 ## Requisitos
-- Android Studio atualizado (Hedgehog ou superior)
-- JDK 17
-- SDK Android instalado (min API 24, target API 36)
-- Gradle 8+ (wrapper incluso)
+- JDK 17 ou superior (testado com 25)
+- SDK Android com `platforms;android-36.1`, `build-tools;36.1.0` e `platform-tools`
+- Gradle 9+ (wrapper incluso)
+- Android Studio e opcional: o build funciona so com o SDK via linha de comando
+
+### SDK sem Android Studio
+
+```bash
+# 1. cmdline-tools
+mkdir -p ~/Android/Sdk/cmdline-tools
+curl -fsSL -o /tmp/cmdtools.zip \
+  https://dl.google.com/android/repository/commandlinetools-linux-13114758_latest.zip
+unzip -q /tmp/cmdtools.zip -d /tmp/cmdtools
+mv /tmp/cmdtools/cmdline-tools ~/Android/Sdk/cmdline-tools/latest
+
+# 2. pacotes
+export ANDROID_HOME="$HOME/Android/Sdk"
+export PATH="$ANDROID_HOME/cmdline-tools/latest/bin:$PATH"
+yes | sdkmanager --licenses
+sdkmanager --install "platform-tools" "platforms;android-36.1" "build-tools;36.1.0"
+
+# 3. apontar o projeto (local.properties esta no .gitignore)
+echo "sdk.dir=$HOME/Android/Sdk" > local.properties
+```
 
 ## Configurar Firebase (opcional)
 1. Crie o projeto no Firebase.
@@ -50,20 +71,16 @@ Sem esse arquivo o app funciona localmente, mas sem login/sync.
 ### APK Debug (desenvolvimento / teste rapido)
 
 ```bash
-cd /home/leonardoti03/codes/github/TecMotors
-
 ./gradlew assembleDebug
 ```
 
-APK gerado em:
+APK gerado em `app/build/outputs/apk/debug/`, com nome versionado:
 ```
-app/build/outputs/apk/debug/app-debug.apk
+TecMotors-v<versionName>-build<versionCode>-debug.apk
 ```
 
-Renomear para distribuicao:
-```bash
-cp app/build/outputs/apk/debug/app-debug.apk TecMotors-debug.apk
-```
+> O build incrementa `app/version.properties` automaticamente a cada
+> `assembleDebug`/`assembleRelease`, entao esse arquivo aparece modificado no git.
 
 ### APK Release (distribuicao)
 
@@ -120,7 +137,7 @@ O APK fica em `app/build/outputs/apk/debug/`.
 
 ```bash
 # Instalar (ou atualizar) no dispositivo conectado
-adb install -r app/build/outputs/apk/debug/app-debug.apk
+adb install -r app/build/outputs/apk/debug/TecMotors-*-debug.apk
 
 # Ver dispositivos conectados
 adb devices

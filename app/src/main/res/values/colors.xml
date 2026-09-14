@@ -7,4 +7,8 @@
     <color name="teal_700">#FF018786</color>
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
+
+    <!-- Espelha DarkBackground de ui/theme/Color.kt. Usado na splash e no
+         windowBackground para a abertura nao piscar. -->
+    <color name="brand_background">#FF0B111B</color>
 </resources>

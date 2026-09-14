@@ -2,7 +2,10 @@ package br.com.tec.tecmotors.presentation.refuels
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import br.com.tec.tecmotors.domain.model.FuelRecord
+import br.com.tec.tecmotors.domain.model.OdometerRecord
 import br.com.tec.tecmotors.domain.usecase.AddRefuelUseCase
+import br.com.tec.tecmotors.domain.usecase.ObserveOdometersUseCase
 import br.com.tec.tecmotors.domain.usecase.ObserveRefuelsUseCase
 import br.com.tec.tecmotors.domain.usecase.ObserveVehiclesUseCase
 import br.com.tec.tecmotors.presentation.common.UiFeedback
@@ -22,6 +25,7 @@ import kotlinx.coroutines.launch
 class RefuelsViewModel(
     private val observeVehiclesUseCase: ObserveVehiclesUseCase,
     private val observeRefuelsUseCase: ObserveRefuelsUseCase,
+    private val observeOdometersUseCase: ObserveOdometersUseCase,
     private val addRefuelUseCase: AddRefuelUseCase
 ) : ViewModel() {
     private val localState = MutableStateFlow(RefuelsUiState(dateText = todayBr()))
@@ -31,8 +35,9 @@ class RefuelsViewModel(
     val uiState: StateFlow<RefuelsUiState> = combine(
         observeVehiclesUseCase(),
         observeRefuelsUseCase(),
+        observeOdometersUseCase(),
         localState
-    ) { vehicles, refuels, state ->
+    ) { vehicles, refuels, odometers, state ->
         val selected = state.selectedVehicleId.takeIf { id -> vehicles.any { it.id == id } }
             ?: vehicles.firstOrNull()?.id
             ?: -1L
@@ -55,12 +60,37 @@ class RefuelsViewModel(
 
         val suggested = stationInsights.firstOrNull()?.stationName
 
+        val lastOdometerKm = lastKnownOdometerKm(
+            refuels = selectedVehicleRefuels,
+            odometers = odometers.filter { it.vehicleId == selected }
+        )
+        val lastRefuel = selectedVehicleRefuels.maxByOrNull { it.dateEpochDay }
+
+        val liters = parseDecimal(state.litersText)?.takeIf { it > 0.0 }
+        val totalPaid = parseDecimal(state.totalPaidText)?.takeIf { it > 0.0 }
+        val odometer = parseDecimal(state.odometerText)
+
+        val distanceSinceLast = if (odometer != null && lastOdometerKm != null) {
+            (odometer - lastOdometerKm).takeIf { it > 0.0 }
+        } else {
+            null
+        }
+
         state.copy(
             vehicles = vehicles,
             fuelRecords = refuels,
             selectedVehicleId = selected,
             stationInsights = stationInsights,
-            suggestedStationName = suggested
+            suggestedStationName = suggested,
+            lastOdometerKm = lastOdometerKm,
+            lastStationName = lastRefuel?.stationName.orEmpty(),
+            computedPricePerLiter = if (totalPaid != null && liters != null) totalPaid / liters else null,
+            distanceSinceLastKm = distanceSinceLast,
+            estimatedKmPerLiter = if (distanceSinceLast != null && liters != null) {
+                distanceSinceLast / liters
+            } else {
+                null
+            }
         )
     }.stateIn(
         scope = viewModelScope,
@@ -75,9 +105,12 @@ class RefuelsViewModel(
             is RefuelsUiEvent.ChangeOdometer -> localState.update { it.copy(odometerText = event.value) }
             is RefuelsUiEvent.ChangeLiters -> localState.update { it.copy(litersText = event.value) }
             is RefuelsUiEvent.ChangePrice -> localState.update { it.copy(priceText = event.value) }
+            is RefuelsUiEvent.ChangeTotalPaid -> localState.update { it.copy(totalPaidText = event.value) }
             is RefuelsUiEvent.ChangeStation -> localState.update { it.copy(stationText = event.value) }
             is RefuelsUiEvent.SelectUsageType -> localState.update { it.copy(selectedUsageType = event.value) }
             is RefuelsUiEvent.SetReceiptImageUri -> localState.update { it.copy(receiptImageUri = event.value) }
+
+            RefuelsUiEvent.DiscardQuickRefuel -> clearDraft()
 
             RefuelsUiEvent.SaveRefuel -> {
                 val state = uiState.value
@@ -91,29 +124,91 @@ class RefuelsViewModel(
                     return
                 }
 
-                viewModelScope.launch {
-                    addRefuelUseCase(
-                        vehicleId = state.selectedVehicleId,
-                        dateEpochDay = date.toEpochDay(),
-                        odometerKm = odometer,
-                        liters = liters,
-                        pricePerLiter = price,
-                        stationName = state.stationText,
-                        usageType = state.selectedUsageType,
-                        receiptImageUri = state.receiptImageUri
-                    )
-                    localState.update {
-                        it.copy(
-                            odometerText = "",
-                            litersText = "",
-                            priceText = "",
-                            receiptImageUri = null
-                        )
-                    }
-                    emitFeedback(UiFeedback.Success("Abastecimento salvo"))
+                persist(
+                    vehicleId = state.selectedVehicleId,
+                    dateEpochDay = date.toEpochDay(),
+                    odometerKm = odometer,
+                    liters = liters,
+                    pricePerLiter = price,
+                    stationName = state.stationText,
+                    state = state
+                )
+            }
+
+            RefuelsUiEvent.SaveQuickRefuel -> {
+                val state = uiState.value
+                val date = parseDateBrOrIso(state.dateText)
+                val odometer = parseDecimal(state.odometerText)
+                val liters = parseDecimal(state.litersText)?.takeIf { it > 0.0 }
+                val totalPaid = parseDecimal(state.totalPaidText)?.takeIf { it > 0.0 }
+
+                if (state.selectedVehicleId <= 0L || date == null || odometer == null ||
+                    liters == null || totalPaid == null
+                ) {
+                    emitFeedback(UiFeedback.Error("Informe valor pago, litros e odometro"))
+                    return
                 }
+
+                persist(
+                    vehicleId = state.selectedVehicleId,
+                    dateEpochDay = date.toEpochDay(),
+                    odometerKm = odometer,
+                    liters = liters,
+                    pricePerLiter = totalPaid / liters,
+                    // posto em branco no registro rapido repete o ultimo abastecimento
+                    stationName = state.stationText.ifBlank { state.lastStationName },
+                    state = state
+                )
             }
         }
+    }
+
+    private fun persist(
+        vehicleId: Long,
+        dateEpochDay: Long,
+        odometerKm: Double,
+        liters: Double,
+        pricePerLiter: Double,
+        stationName: String,
+        state: RefuelsUiState
+    ) {
+        viewModelScope.launch {
+            addRefuelUseCase(
+                vehicleId = vehicleId,
+                dateEpochDay = dateEpochDay,
+                odometerKm = odometerKm,
+                liters = liters,
+                pricePerLiter = pricePerLiter,
+                stationName = stationName,
+                usageType = state.selectedUsageType,
+                receiptImageUri = state.receiptImageUri
+            )
+            clearDraft()
+            emitFeedback(UiFeedback.Success("Abastecimento salvo"))
+        }
+    }
+
+    private fun clearDraft() {
+        localState.update {
+            it.copy(
+                dateText = todayBr(),
+                odometerText = "",
+                litersText = "",
+                priceText = "",
+                totalPaidText = "",
+                // posto fica: o proximo abastecimento costuma ser no mesmo lugar
+                receiptImageUri = null
+            )
+        }
+    }
+
+    private fun lastKnownOdometerKm(
+        refuels: List<FuelRecord>,
+        odometers: List<OdometerRecord>
+    ): Double? {
+        val fromRefuels = refuels.maxOfOrNull { it.odometerKm }
+        val fromOdometers = odometers.maxOfOrNull { it.odometerKm }
+        return listOfNotNull(fromRefuels, fromOdometers).maxOrNull()
     }
 
     private fun emitFeedback(feedback: UiFeedback) {

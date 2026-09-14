@@ -4,26 +4,36 @@ import android.Manifest
 import android.app.Activity
 import android.content.pm.PackageManager
 import android.os.Build
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.AccountCircle
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.BarChart
+import androidx.compose.material.icons.filled.Calculate
+import androidx.compose.material.icons.filled.Build
 import androidx.compose.material.icons.filled.DarkMode
+import androidx.compose.material.icons.filled.DirectionsCar
+import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.LightMode
+import androidx.compose.material.icons.filled.LocalGasStation
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.NavigationBar
+import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.ScrollableTabRow
 import androidx.compose.material3.Snackbar
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
@@ -33,19 +43,16 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.graphics.Color
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import br.com.tec.tecmotors.AppTopBarTitle
-import br.com.tec.tecmotors.AppVersionBadge
-import br.com.tec.tecmotors.IntroPresentationScreen
 import br.com.tec.tecmotors.R
 import br.com.tec.tecmotors.core.common.simpleViewModelFactory
 import br.com.tec.tecmotors.core.di.AppContainer
@@ -53,41 +60,53 @@ import br.com.tec.tecmotors.presentation.account.AccountSyncDialog
 import br.com.tec.tecmotors.presentation.account.AccountSyncUiEvent
 import br.com.tec.tecmotors.presentation.account.AccountSyncViewModel
 import br.com.tec.tecmotors.presentation.common.UiFeedback
+import br.com.tec.tecmotors.presentation.home.HomeScreen
+import br.com.tec.tecmotors.presentation.home.HomeViewModel
 import br.com.tec.tecmotors.presentation.maintenance.MaintenanceScreen
 import br.com.tec.tecmotors.presentation.maintenance.MaintenanceViewModel
 import br.com.tec.tecmotors.presentation.refuels.FuelCalculatorScreen
+import br.com.tec.tecmotors.presentation.refuels.QuickRefuelSheet
 import br.com.tec.tecmotors.presentation.refuels.RefuelsScreen
 import br.com.tec.tecmotors.presentation.refuels.RefuelsViewModel
 import br.com.tec.tecmotors.presentation.reports.ReportsScreen
 import br.com.tec.tecmotors.presentation.reports.ReportsViewModel
 import br.com.tec.tecmotors.presentation.vehicles.VehiclesScreen
 import br.com.tec.tecmotors.presentation.vehicles.VehiclesViewModel
-import br.com.tec.tecmotors.ui.theme.FeedbackSuccess
 import br.com.tec.tecmotors.resolveGoogleClientId
+import br.com.tec.tecmotors.ui.theme.FeedbackSuccess
 import br.com.tec.tecmotors.ui.theme.TecMotorsTheme
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions
 import com.google.android.gms.common.api.ApiException
 
-private enum class AppTab(val titleRes: Int) {
-    REFUELS(R.string.tab_refuels),
-    MAINTENANCE(R.string.tab_maintenance),
-    REPORTS(R.string.tab_reports),
-    CALCULATOR(R.string.tab_calculator),
-    VEHICLES(R.string.tab_vehicles)
-}
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun TecMotorsRoot(appContainer: AppContainer) {
+fun TecMotorsRoot(
+    appContainer: AppContainer,
+    openQuickRefuelOnStart: Boolean = false,
+    openOdometerOnStart: Boolean = false
+) {
     val appViewModel: AppViewModel = viewModel(
         factory = remember(appContainer) {
             simpleViewModelFactory {
                 AppViewModel(
                     observeDarkThemeUseCase = appContainer.observeDarkThemeUseCase,
-                    setDarkThemeUseCase = appContainer.setDarkThemeUseCase,
-                    ensureDefaultVehiclesUseCase = appContainer.ensureDefaultVehiclesUseCase,
-                    legacyImportManager = appContainer.legacyImportManager
+                    setDarkThemeUseCase = appContainer.setDarkThemeUseCase
+                )
+            }
+        }
+    )
+    val homeViewModel: HomeViewModel = viewModel(
+        factory = remember(appContainer) {
+            simpleViewModelFactory {
+                HomeViewModel(
+                    observeVehiclesUseCase = appContainer.observeVehiclesUseCase,
+                    observeRefuelsUseCase = appContainer.observeRefuelsUseCase,
+                    observeOdometersUseCase = appContainer.observeOdometersUseCase,
+                    observeMaintenanceUseCase = appContainer.observeMaintenanceUseCase,
+                    observeSettingsUseCase = appContainer.observeSettingsUseCase,
+                    calculatePeriodReportUseCase = appContainer.calculatePeriodReportUseCase,
+                    decideRemindersUseCase = appContainer.decideRemindersUseCase
                 )
             }
         }
@@ -111,6 +130,7 @@ fun TecMotorsRoot(appContainer: AppContainer) {
                 RefuelsViewModel(
                     observeVehiclesUseCase = appContainer.observeVehiclesUseCase,
                     observeRefuelsUseCase = appContainer.observeRefuelsUseCase,
+                    observeOdometersUseCase = appContainer.observeOdometersUseCase,
                     addRefuelUseCase = appContainer.addRefuelUseCase
                 )
             }
@@ -167,6 +187,7 @@ fun TecMotorsRoot(appContainer: AppContainer) {
     )
 
     val appState by appViewModel.uiState.collectAsStateWithLifecycle()
+    val homeState by homeViewModel.uiState.collectAsStateWithLifecycle()
     val vehiclesState by vehiclesViewModel.uiState.collectAsStateWithLifecycle()
     val refuelsState by refuelsViewModel.uiState.collectAsStateWithLifecycle()
     val maintenanceState by maintenanceViewModel.uiState.collectAsStateWithLifecycle()
@@ -224,6 +245,17 @@ fun TecMotorsRoot(appContainer: AppContainer) {
         }
     }
 
+    // Atalhos vindos das acoes de notificacao.
+    LaunchedEffect(openQuickRefuelOnStart, openOdometerOnStart) {
+        when {
+            openQuickRefuelOnStart ->
+                appViewModel.onEvent(AppUiEvent.SetQuickRefuelVisible(true))
+
+            openOdometerOnStart ->
+                appViewModel.onEvent(AppUiEvent.Navigate(AppDestination.VEHICLES))
+        }
+    }
+
     val snackbarHostState = remember { SnackbarHostState() }
     var currentSnackbarFeedback by remember { mutableStateOf<UiFeedback?>(null) }
 
@@ -247,9 +279,10 @@ fun TecMotorsRoot(appContainer: AppContainer) {
     }
 
     TecMotorsTheme(darkTheme = appState.darkThemeEnabled) {
-        if (appState.showIntro) {
-            IntroPresentationScreen(isDarkTheme = appState.darkThemeEnabled)
-            return@TecMotorsTheme
+        val destination = appState.destination
+
+        BackHandler(enabled = destination != AppDestination.HOME) {
+            appViewModel.onEvent(AppUiEvent.NavigateBack)
         }
 
         Scaffold(
@@ -257,12 +290,10 @@ fun TecMotorsRoot(appContainer: AppContainer) {
             containerColor = MaterialTheme.colorScheme.background,
             snackbarHost = {
                 SnackbarHost(hostState = snackbarHostState) { data ->
-                    val containerColor = currentSnackbarFeedback.containerColor()
-                    val contentColor = currentSnackbarFeedback.contentColor()
                     Snackbar(
                         snackbarData = data,
-                        containerColor = containerColor,
-                        contentColor = contentColor
+                        containerColor = currentSnackbarFeedback.containerColor(),
+                        contentColor = currentSnackbarFeedback.contentColor()
                     )
                 }
             },
@@ -272,8 +303,22 @@ fun TecMotorsRoot(appContainer: AppContainer) {
                         containerColor = MaterialTheme.colorScheme.surface,
                         titleContentColor = MaterialTheme.colorScheme.onSurface
                     ),
+                    navigationIcon = {
+                        if (!destination.isPrimary) {
+                            IconButton(onClick = { appViewModel.onEvent(AppUiEvent.NavigateBack) }) {
+                                Icon(
+                                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                    contentDescription = stringResource(R.string.action_back)
+                                )
+                            }
+                        }
+                    },
                     title = {
-                        AppTopBarTitle(isDarkTheme = appState.darkThemeEnabled)
+                        if (destination == AppDestination.HOME) {
+                            AppTopBarTitle(isDarkTheme = appState.darkThemeEnabled)
+                        } else {
+                            Text(stringResource(destination.titleRes))
+                        }
                     },
                     actions = {
                         IconButton(onClick = {
@@ -307,6 +352,46 @@ fun TecMotorsRoot(appContainer: AppContainer) {
                         }
                     }
                 )
+            },
+            bottomBar = {
+                if (destination.isPrimary) {
+                    NavigationBar(containerColor = MaterialTheme.colorScheme.surface) {
+                        AppDestination.primaryDestinations.forEach { item ->
+                            NavigationBarItem(
+                                selected = destination == item,
+                                onClick = { appViewModel.onEvent(AppUiEvent.Navigate(item)) },
+                                icon = {
+                                    Icon(
+                                        imageVector = destinationIcon(item),
+                                        contentDescription = null
+                                    )
+                                },
+                                label = { Text(stringResource(item.titleRes)) },
+                                colors = NavigationBarItemDefaults.colors(
+                                    selectedIconColor = MaterialTheme.colorScheme.primary,
+                                    selectedTextColor = MaterialTheme.colorScheme.onSurface,
+                                    unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            )
+                        }
+                    }
+                }
+            },
+            floatingActionButton = {
+                if (destination.isPrimary) {
+                    ExtendedFloatingActionButton(
+                        onClick = { appViewModel.onEvent(AppUiEvent.SetQuickRefuelVisible(true)) },
+                        containerColor = MaterialTheme.colorScheme.primary,
+                        contentColor = MaterialTheme.colorScheme.onPrimary
+                    ) {
+                        Icon(imageVector = Icons.Filled.Add, contentDescription = null)
+                        Text(
+                            text = stringResource(R.string.action_quick_refuel),
+                            modifier = Modifier.padding(start = 8.dp)
+                        )
+                    }
+                }
             }
         ) { innerPadding ->
             Box(
@@ -314,57 +399,46 @@ fun TecMotorsRoot(appContainer: AppContainer) {
                     .fillMaxSize()
                     .padding(innerPadding)
             ) {
-                Column(modifier = Modifier.fillMaxSize()) {
-                    val tabs = AppTab.entries
-                    val selectedTab = appState.selectedTabIndex.coerceIn(0, tabs.lastIndex)
-
-                    ScrollableTabRow(
-                        selectedTabIndex = selectedTab,
-                        containerColor = MaterialTheme.colorScheme.surface,
-                        contentColor = MaterialTheme.colorScheme.primary,
-                        edgePadding = 8.dp
-                    ) {
-                        tabs.forEachIndexed { index, tab ->
-                            Tab(
-                                selected = selectedTab == index,
-                                onClick = { appViewModel.onEvent(AppUiEvent.SelectTab(index)) },
-                                selectedContentColor = MaterialTheme.colorScheme.primary,
-                                unselectedContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                                text = {
-                                    Text(
-                                        text = stringResource(tab.titleRes),
-                                        maxLines = 1,
-                                        overflow = TextOverflow.Ellipsis
-                                    )
-                                }
-                            )
+                when (destination) {
+                    AppDestination.HOME -> HomeScreen(
+                        state = homeState,
+                        onEvent = homeViewModel::onEvent,
+                        onOpenMaintenance = {
+                            appViewModel.onEvent(AppUiEvent.Navigate(AppDestination.MAINTENANCE))
+                        },
+                        onOpenVehicles = {
+                            appViewModel.onEvent(AppUiEvent.Navigate(AppDestination.VEHICLES))
+                        },
+                        onOpenCalculator = {
+                            appViewModel.onEvent(AppUiEvent.Navigate(AppDestination.CALCULATOR))
+                        },
+                        onOpenRefuelHistory = {
+                            appViewModel.onEvent(AppUiEvent.Navigate(AppDestination.REFUEL_HISTORY))
                         }
-                    }
+                    )
 
-                    when (tabs[selectedTab]) {
-                        AppTab.VEHICLES -> VehiclesScreen(
-                            state = vehiclesState,
-                            onEvent = vehiclesViewModel::onEvent
-                        )
+                    AppDestination.MAINTENANCE -> MaintenanceScreen(
+                        state = maintenanceState,
+                        viewModel = maintenanceViewModel,
+                        onEvent = maintenanceViewModel::onEvent
+                    )
 
-                        AppTab.REFUELS -> RefuelsScreen(
-                            state = refuelsState,
-                            onEvent = refuelsViewModel::onEvent
-                        )
+                    AppDestination.REPORTS -> ReportsScreen(
+                        state = reportsState,
+                        onEvent = reportsViewModel::onEvent
+                    )
 
-                        AppTab.MAINTENANCE -> MaintenanceScreen(
-                            state = maintenanceState,
-                            viewModel = maintenanceViewModel,
-                            onEvent = maintenanceViewModel::onEvent
-                        )
+                    AppDestination.VEHICLES -> VehiclesScreen(
+                        state = vehiclesState,
+                        onEvent = vehiclesViewModel::onEvent
+                    )
 
-                        AppTab.REPORTS -> ReportsScreen(
-                            state = reportsState,
-                            onEvent = reportsViewModel::onEvent
-                        )
+                    AppDestination.CALCULATOR -> FuelCalculatorScreen()
 
-                        AppTab.CALCULATOR -> FuelCalculatorScreen()
-                    }
+                    AppDestination.REFUEL_HISTORY -> RefuelsScreen(
+                        state = refuelsState,
+                        onEvent = refuelsViewModel::onEvent
+                    )
                 }
 
                 if (appState.showAccountDialog) {
@@ -397,15 +471,26 @@ fun TecMotorsRoot(appContainer: AppContainer) {
                         runBusyAction = { block -> accountSyncViewModel.withBusy(block) }
                     )
                 }
-
-                AppVersionBadge(
-                    modifier = Modifier
-                        .align(Alignment.BottomEnd)
-                        .padding(end = 10.dp, bottom = 10.dp)
-                )
             }
         }
+
+        if (appState.showQuickRefuel) {
+            QuickRefuelSheet(
+                state = refuelsState,
+                onEvent = refuelsViewModel::onEvent,
+                onDismiss = { appViewModel.onEvent(AppUiEvent.SetQuickRefuelVisible(false)) }
+            )
+        }
     }
+}
+
+private fun destinationIcon(destination: AppDestination): ImageVector = when (destination) {
+    AppDestination.HOME -> Icons.Filled.Home
+    AppDestination.MAINTENANCE -> Icons.Filled.Build
+    AppDestination.REPORTS -> Icons.Filled.BarChart
+    AppDestination.VEHICLES -> Icons.Filled.DirectionsCar
+    AppDestination.CALCULATOR -> Icons.Filled.Calculate
+    AppDestination.REFUEL_HISTORY -> Icons.Filled.LocalGasStation
 }
 
 @Composable

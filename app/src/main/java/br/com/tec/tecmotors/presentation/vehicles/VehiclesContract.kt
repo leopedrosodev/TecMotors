@@ -13,6 +13,8 @@ sealed interface VehiclesUiEvent {
     data object SaveOdometer : VehiclesUiEvent
     data class ChangeNewVehicleName(val value: String) : VehiclesUiEvent
     data class AddVehicle(val type: VehicleType) : VehiclesUiEvent
+    data class SetOdometerSheetVisible(val visible: Boolean) : VehiclesUiEvent
+    data class SetAddVehicleSheetVisible(val visible: Boolean) : VehiclesUiEvent
 }
 
 data class VehiclesUiState(
@@ -22,5 +24,18 @@ data class VehiclesUiState(
     val dateText: String = "",
     val odometerText: String = "",
     val nameDrafts: Map<Long, String> = emptyMap(),
-    val newVehicleName: String = ""
-)
+    val newVehicleName: String = "",
+    val showOdometerSheet: Boolean = false,
+    val showAddVehicleSheet: Boolean = false
+) {
+    /** Ultima leitura conhecida por veiculo - a tela nao varre a lista. */
+    fun lastOdometerOf(vehicleId: Long): Double? = odometerRecords
+        .filter { it.vehicleId == vehicleId }
+        .maxByOrNull { it.dateEpochDay }
+        ?.odometerKm
+
+    fun lastOdometerDayOf(vehicleId: Long): Long? = odometerRecords
+        .filter { it.vehicleId == vehicleId }
+        .maxByOrNull { it.dateEpochDay }
+        ?.dateEpochDay
+}

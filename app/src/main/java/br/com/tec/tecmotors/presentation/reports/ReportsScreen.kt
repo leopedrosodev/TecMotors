@@ -2,24 +2,40 @@ package br.com.tec.tecmotors.presentation.reports
 
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.FileDownload
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import br.com.tec.tecmotors.R
 import br.com.tec.tecmotors.data.CsvExporter
@@ -29,13 +45,12 @@ import br.com.tec.tecmotors.presentation.common.DateBrField
 import br.com.tec.tecmotors.presentation.common.MetricBarChart
 import br.com.tec.tecmotors.presentation.common.MoneyField
 import br.com.tec.tecmotors.presentation.common.UiFeedback
-import br.com.tec.tecmotors.presentation.common.VehicleChipSelector
-import br.com.tec.tecmotors.presentation.common.dateBrFormatter
+import br.com.tec.tecmotors.presentation.common.VehicleFilterRow
 import br.com.tec.tecmotors.presentation.common.formatCurrency
+import br.com.tec.tecmotors.presentation.common.formatInteger
 import br.com.tec.tecmotors.presentation.common.formatNumber
-import java.time.DayOfWeek
 import java.time.LocalDate
-import java.time.YearMonth
+import kotlin.math.abs
 
 @Composable
 fun ReportsScreen(
@@ -85,217 +100,234 @@ fun ReportsScreen(
         )
     }
 
-    val today = LocalDate.now()
-    val weekStart = today.with(DayOfWeek.MONDAY)
-    val monthStart = YearMonth.of(today.year, today.month).atDay(1)
-
     Column(
         modifier = Modifier
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
-            .padding(16.dp),
+            .padding(start = 16.dp, end = 16.dp, top = 12.dp, bottom = 96.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        Text(stringResource(R.string.title_reports), style = MaterialTheme.typography.titleLarge)
-
-        VehicleChipSelector(
+        VehicleFilterRow(
             vehicles = state.vehicles,
             selectedVehicleId = state.selectedVehicleId,
             onSelect = { onEvent(ReportsUiEvent.SelectVehicle(it)) }
         )
 
-        DashboardCard(
-            monthlyTotal = state.dashboardCurrentMonthTotal,
-            monthlyDistance = state.dashboardCurrentMonthDistance,
-            monthlyRefuels = state.dashboardCurrentMonthRefuels,
-            monthlyMaintenance = state.dashboardCurrentMonthMaintenance
+        PeriodSelector(
+            selected = state.selectedPeriod,
+            onSelect = { onEvent(ReportsUiEvent.SelectPeriod(it)) }
         )
 
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
-        ) {
-            Column(
-                modifier = Modifier.padding(12.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
+        if (state.selectedPeriod == ReportPeriod.CUSTOM) {
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(14.dp),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
             ) {
-                Text(stringResource(R.string.title_monthly_budget), fontWeight = FontWeight.Bold)
-                MoneyField(
-                    value = state.budgetInputText,
-                    onValueChange = { onEvent(ReportsUiEvent.ChangeBudgetInput(it)) },
-                    modifier = Modifier.fillMaxWidth(),
-                    label = stringResource(R.string.label_monthly_budget)
-                )
-                Button(
-                    onClick = { onEvent(ReportsUiEvent.SaveBudget) },
-                    modifier = Modifier.fillMaxWidth()
+                Column(
+                    modifier = Modifier.padding(14.dp),
+                    verticalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
-                    Text(stringResource(R.string.action_save_budget))
-                }
-                if (state.budgetValue > 0.0) {
-                    val messageRes = if (state.budgetExceeded) {
-                        R.string.text_budget_exceeded
-                    } else {
-                        R.string.text_budget_remaining
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        DateBrField(
+                            value = state.customStartDateText,
+                            onValueChange = { onEvent(ReportsUiEvent.ChangeCustomStartDate(it)) },
+                            modifier = Modifier.weight(1f),
+                            label = stringResource(R.string.label_period_start)
+                        )
+                        DateBrField(
+                            value = state.customEndDateText,
+                            onValueChange = { onEvent(ReportsUiEvent.ChangeCustomEndDate(it)) },
+                            modifier = Modifier.weight(1f),
+                            label = stringResource(R.string.label_period_end)
+                        )
                     }
-                    Text(
-                        stringResource(messageRes, formatCurrency(kotlin.math.abs(state.budgetRemaining))),
-                        color = if (state.budgetExceeded) {
-                            MaterialTheme.colorScheme.error
-                        } else {
-                            MaterialTheme.colorScheme.primary
-                        }
-                    )
+                    Button(
+                        onClick = { onEvent(ReportsUiEvent.ApplyCustomPeriod) },
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
+                        Text(stringResource(R.string.action_apply_period))
+                    }
                 }
             }
         }
 
-        PeriodReportCard(
-            title = stringResource(R.string.title_weekly),
-            period = stringResource(
-                R.string.text_period_range,
-                weekStart.format(dateBrFormatter),
-                today.format(dateBrFormatter)
-            ),
-            report = state.weeklyReport
-        )
+        val report = state.activeReport
 
-        PeriodReportCard(
-            title = stringResource(R.string.title_monthly),
-            period = stringResource(
-                R.string.text_period_range,
-                monthStart.format(dateBrFormatter),
-                today.format(dateBrFormatter)
-            ),
-            report = state.monthlyReport
-        )
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            StatTile(
+                value = formatCurrency(report.overallCost),
+                label = stringResource(R.string.reports_stat_total),
+                modifier = Modifier.weight(1f)
+            )
+            StatTile(
+                value = formatInteger(report.distanceKm),
+                label = stringResource(R.string.reports_stat_distance),
+                modifier = Modifier.weight(1f)
+            )
+        }
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            StatTile(
+                value = if (report.averageKmPerLiter > 0) formatNumber(report.averageKmPerLiter) else "—",
+                label = stringResource(R.string.reports_stat_km_per_liter),
+                modifier = Modifier.weight(1f)
+            )
+            StatTile(
+                value = if (report.distanceKm > 0) {
+                    formatCurrency(report.overallCost / report.distanceKm)
+                } else {
+                    "—"
+                },
+                label = stringResource(R.string.reports_stat_cost_per_km),
+                modifier = Modifier.weight(1f)
+            )
+        }
 
         Card(
             modifier = Modifier.fillMaxWidth(),
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+            shape = RoundedCornerShape(14.dp),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
         ) {
             Column(
-                modifier = Modifier.padding(12.dp),
+                modifier = Modifier.padding(14.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                Text(stringResource(R.string.title_custom_period), fontWeight = FontWeight.Bold)
-                DateBrField(
-                    value = state.customStartDateText,
-                    onValueChange = { onEvent(ReportsUiEvent.ChangeCustomStartDate(it)) },
-                    modifier = Modifier.fillMaxWidth(),
-                    label = stringResource(R.string.label_period_start)
+                Text(
+                    text = stringResource(R.string.reports_breakdown_title),
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Bold
                 )
-                DateBrField(
-                    value = state.customEndDateText,
-                    onValueChange = { onEvent(ReportsUiEvent.ChangeCustomEndDate(it)) },
-                    modifier = Modifier.fillMaxWidth(),
-                    label = stringResource(R.string.label_period_end)
+                BreakdownRow(
+                    label = stringResource(R.string.reports_breakdown_fuel),
+                    value = formatCurrency(report.totalCost)
                 )
-                Button(
-                    onClick = { onEvent(ReportsUiEvent.ApplyCustomPeriod) },
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text(stringResource(R.string.action_apply_period))
-                }
+                BreakdownRow(
+                    label = stringResource(R.string.reports_breakdown_maintenance),
+                    value = formatCurrency(report.maintenanceCost)
+                )
+                BreakdownRow(
+                    label = stringResource(R.string.reports_breakdown_refuels),
+                    value = report.refuelCount.toString()
+                )
+                BreakdownRow(
+                    label = stringResource(R.string.reports_breakdown_liters),
+                    value = formatNumber(report.liters)
+                )
             }
         }
 
-        PeriodReportCard(
-            title = stringResource(R.string.title_custom_period_result),
-            period = stringResource(
-                R.string.text_period_range,
-                state.customStartDateText,
-                state.customEndDateText
-            ),
-            report = state.customReport
-        )
-
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
-        ) {
-            Column(
-                modifier = Modifier.padding(12.dp),
-                verticalArrangement = Arrangement.spacedBy(6.dp)
-            ) {
-                Text(stringResource(R.string.title_vehicle_summary), fontWeight = FontWeight.Bold)
-                Text(stringResource(R.string.text_total_distance, formatNumber(state.vehicleSummary.distanceKm)))
-                Text(stringResource(R.string.text_average_consumption, formatNumber(state.vehicleSummary.kmPerLiter)))
-                Text(stringResource(R.string.text_cost_per_km, formatCurrency(state.vehicleSummary.costPerKm)))
-                Text(stringResource(R.string.text_total_fuel_cost, formatCurrency(state.vehicleSummary.totalCost)))
-            }
-        }
+        BudgetCard(state = state, onEvent = onEvent)
 
         MetricBarChart(
             title = stringResource(R.string.title_monthly_cost_chart),
-            bars = state.monthlyMetrics.map {
+            subtitle = stringResource(R.string.reports_chart_months),
+            bars = state.monthlyMetrics.mapIndexed { index, metric ->
                 ChartBar(
-                    label = it.monthYear,
-                    value = it.totalCost,
-                    valueText = shortValue(formatCurrency(it.totalCost))
+                    label = metric.monthYear,
+                    value = metric.totalCost,
+                    valueText = compactCurrency(metric.totalCost),
+                    partial = index == state.monthlyMetrics.lastIndex
                 )
             }
         )
 
         MetricBarChart(
             title = stringResource(R.string.title_monthly_consumption_chart),
-            bars = state.monthlyMetrics.map {
+            subtitle = stringResource(R.string.reports_chart_km_per_liter),
+            bars = state.monthlyMetrics.mapIndexed { index, metric ->
                 ChartBar(
-                    label = it.monthYear,
-                    value = it.kmPerLiter,
-                    valueText = "${formatNumber(it.kmPerLiter)}"
+                    label = metric.monthYear,
+                    value = metric.kmPerLiter,
+                    valueText = formatNumber(metric.kmPerLiter),
+                    partial = index == state.monthlyMetrics.lastIndex
                 )
             }
         )
 
         MetricBarChart(
             title = stringResource(R.string.title_monthly_cost_per_km_chart),
-            bars = state.costPerKmMetrics.map {
+            bars = state.costPerKmMetrics.mapIndexed { index, metric ->
                 ChartBar(
-                    label = it.monthYear,
-                    value = it.costPerKm,
-                    valueText = shortValue(formatCurrency(it.costPerKm))
+                    label = metric.monthYear,
+                    value = metric.costPerKm,
+                    valueText = compactCurrency(metric.costPerKm),
+                    partial = index == state.costPerKmMetrics.lastIndex
                 )
             }
         )
 
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
-        ) {
-            Column(
-                modifier = Modifier.padding(12.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
+        if (state.vehicles.size > 1) {
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(14.dp),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
             ) {
-                Text(stringResource(R.string.title_vehicle_compare), fontWeight = FontWeight.Bold)
-                state.vehicles.forEach { vehicle ->
-                    val vehicleFuel = state.fuelRecords.filter { it.vehicleId == vehicle.id }
-                    val totalFuel = vehicleFuel.sumOf { it.totalCost }
-                    val maintenanceTotal = state.maintenanceRecords
-                        .filter { it.vehicleId == vehicle.id }
-                        .sumOf { it.estimatedCost ?: 0.0 }
-                    HorizontalDivider()
-                    Text(vehicle.name, fontWeight = FontWeight.SemiBold)
-                    Text(stringResource(R.string.text_refuel_count, vehicleFuel.size))
-                    Text(stringResource(R.string.text_fuel_total, formatCurrency(totalFuel)))
-                    Text(stringResource(R.string.text_maintenance_total, formatCurrency(maintenanceTotal)))
+                Column(
+                    modifier = Modifier.padding(14.dp),
+                    verticalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    Text(
+                        text = stringResource(R.string.title_vehicle_compare),
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.Bold
+                    )
+                    state.vehicles.forEachIndexed { index, vehicle ->
+                        if (index > 0) HorizontalDivider()
+                        val vehicleFuel = state.fuelRecords.filter { it.vehicleId == vehicle.id }
+                        val totalFuel = vehicleFuel.sumOf { it.totalCost }
+                        val maintenanceTotal = state.maintenanceRecords
+                            .filter { it.vehicleId == vehicle.id }
+                            .sumOf { it.estimatedCost ?: 0.0 }
+
+                        Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                            Text(
+                                text = vehicle.name,
+                                style = MaterialTheme.typography.bodyMedium,
+                                fontWeight = FontWeight.Medium
+                            )
+                            BreakdownRow(
+                                label = stringResource(R.string.reports_compare_fuel, vehicleFuel.size),
+                                value = formatCurrency(totalFuel)
+                            )
+                            BreakdownRow(
+                                label = stringResource(R.string.reports_compare_maintenance),
+                                value = formatCurrency(maintenanceTotal)
+                            )
+                        }
+                    }
                 }
             }
         }
 
-        Button(
+        OutlinedButton(
             onClick = {
                 val fileName = "tec-motors-${LocalDate.now()}.csv"
                 exportCsvLauncher.launch(fileName)
             },
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(14.dp)
         ) {
+            Icon(
+                imageVector = Icons.Filled.FileDownload,
+                contentDescription = null,
+                modifier = Modifier.size(18.dp)
+            )
+            Spacer(Modifier.size(8.dp))
             Text(stringResource(R.string.action_export_csv))
         }
 
         state.exportFeedback?.let {
             Text(
                 text = it.message,
+                style = MaterialTheme.typography.bodySmall,
                 color = when (it) {
                     is UiFeedback.Error -> MaterialTheme.colorScheme.error
                     is UiFeedback.Success -> MaterialTheme.colorScheme.primary
@@ -307,57 +339,191 @@ fun ReportsScreen(
 }
 
 @Composable
-private fun DashboardCard(
-    monthlyTotal: Double,
-    monthlyDistance: Double,
-    monthlyRefuels: Int,
-    monthlyMaintenance: Double
+private fun PeriodSelector(
+    selected: ReportPeriod,
+    onSelect: (ReportPeriod) -> Unit
 ) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(40.dp)
+            .clip(RoundedCornerShape(12.dp))
     ) {
-        Column(
-            modifier = Modifier.padding(12.dp),
-            verticalArrangement = Arrangement.spacedBy(4.dp)
-        ) {
-            Text(stringResource(R.string.title_dashboard_month), fontWeight = FontWeight.Bold)
-            Text(stringResource(R.string.text_dashboard_total, formatCurrency(monthlyTotal)))
-            Text(stringResource(R.string.text_dashboard_distance, formatNumber(monthlyDistance)))
-            Text(stringResource(R.string.text_dashboard_refuels, monthlyRefuels))
-            Text(stringResource(R.string.text_dashboard_maintenance, formatCurrency(monthlyMaintenance)))
+        ReportPeriod.entries.forEach { period ->
+            val isSelected = period == selected
+            Surface(
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxWidth(),
+                color = if (isSelected) {
+                    MaterialTheme.colorScheme.primary
+                } else {
+                    MaterialTheme.colorScheme.surfaceVariant
+                }
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { onSelect(period) },
+                    horizontalArrangement = Arrangement.Center,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = stringResource(period.titleRes),
+                        style = MaterialTheme.typography.labelLarge,
+                        color = if (isSelected) {
+                            MaterialTheme.colorScheme.onPrimary
+                        } else {
+                            MaterialTheme.colorScheme.onSurfaceVariant
+                        },
+                        textAlign = TextAlign.Center
+                    )
+                }
+            }
         }
     }
 }
 
 @Composable
-private fun PeriodReportCard(
-    title: String,
-    period: String,
-    report: br.com.tec.tecmotors.domain.model.PeriodReport
+private fun StatTile(
+    value: String,
+    label: String,
+    modifier: Modifier = Modifier
 ) {
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = modifier,
+        shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
     ) {
         Column(
-            modifier = Modifier.padding(12.dp),
-            verticalArrangement = Arrangement.spacedBy(6.dp)
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 13.dp),
+            verticalArrangement = Arrangement.spacedBy(3.dp)
         ) {
-            Text(title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-            Text(period, style = MaterialTheme.typography.bodySmall)
-            HorizontalDivider(modifier = Modifier.padding(top = 2.dp, bottom = 2.dp))
-            Text(stringResource(R.string.text_report_distance, formatNumber(report.distanceKm)))
-            Text(stringResource(R.string.text_report_consumption, formatNumber(report.averageKmPerLiter)))
-            Text(stringResource(R.string.text_report_cost, formatCurrency(report.totalCost)))
-            Text(stringResource(R.string.text_report_maintenance_cost, formatCurrency(report.maintenanceCost)))
-            Text(stringResource(R.string.text_report_total_cost, formatCurrency(report.overallCost)))
-            Text(stringResource(R.string.text_report_refuels, report.refuelCount))
-            Text(stringResource(R.string.text_report_liters, formatNumber(report.liters)))
+            Text(
+                text = value,
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.Bold,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+            Text(
+                text = label,
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
         }
     }
 }
 
-private fun shortValue(value: String): String {
-    return if (value.length > 11) value.take(11) else value
+@Composable
+private fun BreakdownRow(label: String, value: String) {
+    Row(modifier = Modifier.fillMaxWidth()) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.weight(1f)
+        )
+        Text(
+            text = value,
+            style = MaterialTheme.typography.bodySmall,
+            fontWeight = FontWeight.Medium
+        )
+    }
+}
+
+@Composable
+private fun BudgetCard(
+    state: ReportsUiState,
+    onEvent: (ReportsUiEvent) -> Unit
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(14.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+    ) {
+        Column(
+            modifier = Modifier.padding(14.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            Text(
+                text = stringResource(R.string.title_monthly_budget),
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.Bold
+            )
+
+            if (state.hasBudget) {
+                LinearProgressIndicator(
+                    progress = { state.budgetProgress },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(8.dp)
+                        .clip(RoundedCornerShape(4.dp)),
+                    color = if (state.budgetExceeded) {
+                        MaterialTheme.colorScheme.error
+                    } else {
+                        MaterialTheme.colorScheme.primary
+                    },
+                    trackColor = MaterialTheme.colorScheme.surfaceVariant,
+                    drawStopIndicator = {}
+                )
+                Row(modifier = Modifier.fillMaxWidth()) {
+                    Text(
+                        text = stringResource(
+                            R.string.reports_budget_spent,
+                            formatCurrency(state.dashboardCurrentMonthTotal),
+                            formatCurrency(state.budgetValue)
+                        ),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.weight(1f)
+                    )
+                    Text(
+                        text = if (state.budgetExceeded) {
+                            stringResource(
+                                R.string.home_budget_exceeded,
+                                formatCurrency(abs(state.budgetRemaining))
+                            )
+                        } else {
+                            stringResource(
+                                R.string.home_budget_remaining,
+                                formatCurrency(state.budgetRemaining)
+                            )
+                        },
+                        style = MaterialTheme.typography.bodySmall,
+                        fontWeight = FontWeight.Medium,
+                        color = if (state.budgetExceeded) {
+                            MaterialTheme.colorScheme.error
+                        } else {
+                            MaterialTheme.colorScheme.primary
+                        }
+                    )
+                }
+            }
+
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                MoneyField(
+                    value = state.budgetInputText,
+                    onValueChange = { onEvent(ReportsUiEvent.ChangeBudgetInput(it)) },
+                    modifier = Modifier.weight(1f),
+                    label = stringResource(R.string.label_monthly_budget)
+                )
+                Button(
+                    onClick = { onEvent(ReportsUiEvent.SaveBudget) },
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Text(stringResource(R.string.action_save))
+                }
+            }
+        }
+    }
+}
+
+/** Moeda encurtada para caber em cima de uma barra estreita. */
+private fun compactCurrency(value: Double): String = when {
+    value >= 1000 -> "R$ ${formatInteger(value / 1000)}k"
+    else -> "R$ ${formatInteger(value)}"
 }

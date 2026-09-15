@@ -2,8 +2,6 @@ package br.com.tec.tecmotors.presentation.maintenance
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import br.com.tec.tecmotors.domain.model.MaintenanceRecord
-import br.com.tec.tecmotors.domain.model.MaintenanceType
 import br.com.tec.tecmotors.domain.usecase.AddMaintenanceUseCase
 import br.com.tec.tecmotors.domain.usecase.CalculateComponentHealthUseCase
 import br.com.tec.tecmotors.domain.usecase.CalculateMaintenanceStatusUseCase
@@ -54,21 +52,17 @@ class MaintenanceViewModel(
             .maxByOrNull { it.dateEpochDay }
             ?.odometerKm
 
-        val kmAlerts = maintenance
+        val today = LocalDate.now()
+
+        val items = maintenance
             .filter { it.vehicleId == selected }
-            .filter { !it.done }
-            .filter { it.dueOdometerKm != null && latestOdometer != null }
-            .filter {
-                val remaining = (it.dueOdometerKm ?: 0.0) - (latestOdometer ?: 0.0)
-                remaining <= 500.0
-            }
-            .sortedBy { it.dueOdometerKm ?: Double.MAX_VALUE }
+            .map { record -> toItem(record, latestOdometer, today) }
 
         val healthIndex = calculateComponentHealthUseCase(
             vehicleId = selected,
             maintenanceRecords = maintenance,
             currentOdometerKm = latestOdometer,
-            today = LocalDate.now()
+            today = today
         )
 
         state.copy(
@@ -76,8 +70,17 @@ class MaintenanceViewModel(
             odometerRecords = odometers,
             maintenanceRecords = maintenance,
             selectedVehicleId = selected,
-            kmAlerts = kmAlerts,
-            vehicleHealthIndex = healthIndex
+            currentOdometerKm = latestOdometer,
+            vehicleHealthIndex = healthIndex,
+            attentionItems = items
+                .filter { !it.record.done && it.needsAttention }
+                .sortedBy { it.kmRemaining ?: Double.MAX_VALUE },
+            onTrackItems = items
+                .filter { !it.record.done && !it.needsAttention }
+                .sortedBy { it.kmRemaining ?: Double.MAX_VALUE },
+            doneItems = items
+                .filter { it.record.done }
+                .sortedByDescending { it.record.createdAtEpochDay }
         )
     }.stateIn(
         scope = viewModelScope,
@@ -106,6 +109,10 @@ class MaintenanceViewModel(
             is MaintenanceUiEvent.ChangeEstimatedCost -> localState.update { it.copy(estimatedCostText = event.value) }
             is MaintenanceUiEvent.ChangeNotes -> localState.update { it.copy(notesText = event.value) }
             is MaintenanceUiEvent.SetReceiptImageUri -> localState.update { it.copy(receiptImageUri = event.value) }
+
+            is MaintenanceUiEvent.SetAddSheetVisible -> {
+                localState.update { it.copy(showAddSheet = event.visible) }
+            }
 
             MaintenanceUiEvent.SaveMaintenance -> saveMaintenance()
 
@@ -171,25 +178,39 @@ class MaintenanceViewModel(
                     dueKmText = "",
                     estimatedCostText = "",
                     notesText = "",
-                    receiptImageUri = null
+                    receiptImageUri = null,
+                    showAddSheet = false
                 )
             }
             emitFeedback(UiFeedback.Success("Manutencao cadastrada"))
         }
     }
 
-    fun latestOdometer(vehicleId: Long): Double? {
-        return uiState.value.odometerRecords
-            .filter { it.vehicleId == vehicleId }
-            .maxByOrNull { it.dateEpochDay }
-            ?.odometerKm
-    }
+    /** Resolve status, folga e fracao consumida de um registro. */
+    private fun toItem(
+        record: br.com.tec.tecmotors.domain.model.MaintenanceRecord,
+        currentOdometerKm: Double?,
+        today: LocalDate
+    ): MaintenanceItem {
+        val kmRemaining = record.dueOdometerKm?.let { due ->
+            currentOdometerKm?.let { current -> due - current }
+        }
+        val daysRemaining = record.dueDateEpochDay?.minus(today.toEpochDay())
 
-    fun maintenanceTypeLabel(type: MaintenanceType): String = type.label
+        val interval = record.type.defaultIntervalKm
+        val consumed = when {
+            kmRemaining == null -> 0f
+            interval <= 0.0 -> 0f
+            else -> (1.0 - (kmRemaining / interval)).toFloat().coerceIn(0f, 1f)
+        }
 
-    fun statusOf(record: MaintenanceRecord): MaintenanceDueStatus {
-        val odometer = latestOdometer(record.vehicleId)
-        return calculateMaintenanceStatusUseCase(record, odometer, LocalDate.now())
+        return MaintenanceItem(
+            record = record,
+            status = calculateMaintenanceStatusUseCase(record, currentOdometerKm, today),
+            kmRemaining = kmRemaining,
+            daysRemaining = daysRemaining,
+            consumedFraction = consumed
+        )
     }
 
     private fun emitFeedback(feedback: UiFeedback) {

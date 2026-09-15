@@ -419,7 +419,6 @@ fun TecMotorsRoot(
 
                     AppDestination.MAINTENANCE -> MaintenanceScreen(
                         state = maintenanceState,
-                        viewModel = maintenanceViewModel,
                         onEvent = maintenanceViewModel::onEvent
                     )
 

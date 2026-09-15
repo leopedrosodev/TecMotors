@@ -77,6 +77,14 @@ class VehiclesViewModel(
                 localState.update { it.copy(odometerText = event.value) }
             }
 
+            is VehiclesUiEvent.SetOdometerSheetVisible -> {
+                localState.update { it.copy(showOdometerSheet = event.visible) }
+            }
+
+            is VehiclesUiEvent.SetAddVehicleSheetVisible -> {
+                localState.update { it.copy(showAddVehicleSheet = event.visible) }
+            }
+
             is VehiclesUiEvent.ChangeVehicleName -> {
                 localState.update {
                     it.copy(nameDrafts = it.nameDrafts + (event.vehicleId to event.value))
@@ -113,7 +121,9 @@ class VehiclesViewModel(
                     )
                     localState.update {
                         it.copy(
-                            odometerText = ""
+                            odometerText = "",
+                            dateText = todayBr(),
+                            showOdometerSheet = false
                         )
                     }
                     emitFeedback(UiFeedback.Success("Odometro registrado"))
@@ -134,7 +144,8 @@ class VehiclesViewModel(
                     addVehicleUseCase(name, event.type)
                     localState.update {
                         it.copy(
-                            newVehicleName = ""
+                            newVehicleName = "",
+                            showAddVehicleSheet = false
                         )
                     }
                     emitFeedback(UiFeedback.Success("Veiculo adicionado"))

@@ -22,6 +22,12 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.FilterChipDefaults
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.foundation.layout.size
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -106,4 +112,59 @@ fun VehicleCardSelector(
             }
         }
     }
+}
+
+/**
+ * Seletor de veiculo padrao do app: chips roláveis com icone do tipo.
+ *
+ * Resumo, Manutencao, Relatorios e Veiculos usam este mesmo componente - antes
+ * cada tela tinha o seu, e as quatro ficavam diferentes entre si.
+ */
+@Composable
+fun VehicleFilterRow(
+    vehicles: List<Vehicle>,
+    selectedVehicleId: Long,
+    onSelect: (Long) -> Unit,
+    modifier: Modifier = Modifier,
+    trailing: @Composable (() -> Unit)? = null
+) {
+    Row(
+        modifier = modifier.horizontalScroll(rememberScrollState()),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        vehicles.forEach { vehicle ->
+            FilterChip(
+                selected = vehicle.id == selectedVehicleId,
+                onClick = { onSelect(vehicle.id) },
+                label = {
+                    Text(
+                        text = vehicle.name,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                },
+                leadingIcon = {
+                    Icon(
+                        imageVector = vehicleTypeIcon(vehicle.type),
+                        contentDescription = null,
+                        modifier = Modifier.size(18.dp)
+                    )
+                },
+                shape = CircleShape,
+                colors = FilterChipDefaults.filterChipColors(
+                    selectedContainerColor = MaterialTheme.colorScheme.primary,
+                    selectedLabelColor = MaterialTheme.colorScheme.onPrimary,
+                    selectedLeadingIconColor = MaterialTheme.colorScheme.onPrimary
+                )
+            )
+        }
+        trailing?.invoke()
+    }
+}
+
+fun vehicleTypeIcon(type: VehicleType): ImageVector = when (type) {
+    VehicleType.CAR -> Icons.Filled.DirectionsCar
+    VehicleType.MOTORCYCLE -> Icons.Filled.TwoWheeler
+    VehicleType.OTHER -> Icons.Filled.LocalShipping
 }

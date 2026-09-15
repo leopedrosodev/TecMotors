@@ -274,4 +274,59 @@
     <string name="notif_text_maintenance_due">Vence em %1$s km e você está em %2$s km.</string>
     <string name="notif_title_month_end_odometer">Fecha o mês: falta o odômetro</string>
     <string name="notif_text_month_end_odometer">Sem a leitura de fim de mês o relatório fica sem os km rodados de %1$s.</string>
+
+    <!-- Manutencao -->
+    <string name="maintenance_add">Nova manutenção</string>
+    <string name="maintenance_sheet_title">Nova manutenção</string>
+    <string name="maintenance_sheet_due_hint">Informe o vencimento por odômetro, por data, ou os dois.</string>
+    <string name="maintenance_health_label">saúde</string>
+    <string name="maintenance_health_attention">%1$d item(ns) pedindo atenção</string>
+    <string name="maintenance_health_all_good">Tudo em dia neste veículo</string>
+    <string name="maintenance_health_no_data">Sem manutenções cadastradas ainda</string>
+    <string name="maintenance_legend_attention">%1$d perto do vencimento</string>
+    <string name="maintenance_legend_ok">%1$d em dia</string>
+    <string name="maintenance_current_km">Odômetro atual: %1$s km</string>
+    <string name="maintenance_section_attention">Precisa de atenção</string>
+    <string name="maintenance_section_ok">Em dia</string>
+    <string name="maintenance_section_done">Concluídas (%1$d)</string>
+    <string name="maintenance_remaining_km">%1$s km</string>
+    <string name="maintenance_overdue_km">-%1$s km</string>
+    <string name="maintenance_remaining_days">%1$d dias</string>
+    <string name="maintenance_overdue_days">-%1$d dias</string>
+    <string name="maintenance_no_due">sem prazo</string>
+    <string name="maintenance_due_km">Vence em %1$s km</string>
+    <string name="maintenance_due_date">Vence em %1$s</string>
+    <string name="maintenance_estimated">Custo estimado %1$s</string>
+    <string name="maintenance_empty_title">Nenhuma manutenção cadastrada</string>
+    <string name="maintenance_empty_detail">Cadastre a próxima troca de óleo e o app passa a avisar pelo km rodado.</string>
+
+    <!-- Relatorios -->
+    <string name="reports_period_week">Semana</string>
+    <string name="reports_period_month">Mês</string>
+    <string name="reports_period_custom">Período</string>
+    <string name="reports_stat_total">Gasto no período</string>
+    <string name="reports_stat_distance">km rodados</string>
+    <string name="reports_stat_km_per_liter">km/L médio</string>
+    <string name="reports_stat_cost_per_km">Custo por km</string>
+    <string name="reports_breakdown_title">Composição</string>
+    <string name="reports_breakdown_fuel">Combustível</string>
+    <string name="reports_breakdown_maintenance">Manutenção</string>
+    <string name="reports_breakdown_refuels">Abastecimentos</string>
+    <string name="reports_breakdown_liters">Litros</string>
+    <string name="reports_budget_spent">%1$s de %2$s</string>
+    <string name="reports_chart_months">últimos 6 meses</string>
+    <string name="reports_chart_km_per_liter">km/L</string>
+    <string name="reports_compare_fuel">Combustível (%1$d abast.)</string>
+    <string name="reports_compare_maintenance">Manutenção</string>
+
+    <!-- Veiculos -->
+    <string name="vehicles_register_km">Registrar KM</string>
+    <string name="vehicles_last_reading">Última leitura em %1$s</string>
+    <string name="vehicles_pick_type">Toque no tipo para cadastrar</string>
+
+    <!-- Comuns -->
+    <string name="action_save">Salvar</string>
+    <string name="action_expand">Mostrar</string>
+    <string name="action_collapse">Ocultar</string>
+    <string name="chart_partial_period">período em andamento</string>
 </resources>

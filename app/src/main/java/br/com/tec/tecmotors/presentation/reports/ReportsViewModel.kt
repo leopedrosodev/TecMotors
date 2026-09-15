@@ -200,6 +200,10 @@ class ReportsViewModel(
 
     fun onEvent(event: ReportsUiEvent) {
         when (event) {
+            is ReportsUiEvent.SelectPeriod -> {
+                localState.update { it.copy(selectedPeriod = event.period) }
+            }
+
             is ReportsUiEvent.SelectVehicle -> {
                 localState.update { it.copy(selectedVehicleId = event.vehicleId, budgetInputText = "") }
             }

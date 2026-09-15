@@ -1,7 +1,9 @@
 package br.com.tec.tecmotors
 
 import android.animation.ObjectAnimator
+import android.os.Build
 import android.os.Bundle
+import android.os.SystemClock
 import android.view.View
 import android.view.animation.AccelerateInterpolator
 import androidx.activity.ComponentActivity
@@ -18,6 +20,7 @@ import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
     private val appContainer by lazy { AppContainer(applicationContext) }
+    private val splashStartedAt = SystemClock.uptimeMillis()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         // Precisa vir antes do super.onCreate para o sistema desenhar a splash
@@ -25,8 +28,13 @@ class MainActivity : ComponentActivity() {
         val splashScreen = installSplashScreen()
         super.onCreate(savedInstanceState)
 
-        // A splash sai quando os dados estao prontos - nao depois de um tempo fixo.
-        splashScreen.setKeepOnScreenCondition { !appContainer.appStartup.ready.value }
+        // A splash sai quando os dados estao prontos. Onde a marca anima
+        // (API 31+), tambem esperamos a animacao terminar - senao ela seria
+        // cortada no meio, que fica pior do que nao ter animacao nenhuma.
+        splashScreen.setKeepOnScreenCondition {
+            val elapsed = SystemClock.uptimeMillis() - splashStartedAt
+            !appContainer.appStartup.ready.value || elapsed < splashMinMillis
+        }
         splashScreen.setOnExitAnimationListener(::fadeOutSplash)
 
         lifecycleScope.launch { appContainer.appStartup.awaitReady() }
@@ -61,7 +69,24 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    /**
+     * Piso de tempo da splash.
+     *
+     * Zero fora do Android 12+: la a splash de compatibilidade nao roda
+     * AnimatedVectorDrawable, entao segurar a tela seria atraso puro, sem nada
+     * para mostrar em troca.
+     */
+    private val splashMinMillis: Long
+        get() = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            SPLASH_ANIMATION_MILLIS
+        } else {
+            0L
+        }
+
     private companion object {
         const val SPLASH_FADE_MILLIS = 220L
+
+        /** Casa com android:windowSplashScreenAnimationDuration em values-v31. */
+        const val SPLASH_ANIMATION_MILLIS = 760L
     }
 }

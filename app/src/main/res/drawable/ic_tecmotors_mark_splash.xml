@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Variante da marca para a splash do sistema.
+
+  Por que existe separada de ic_tecmotors_mark.xml:
+  1. O Android reserva 288dp para o icone da splash e so garante os 192dp
+     centrais. A marca precisa vir com folga embutida, senao encosta na borda
+     do recorte circular. Aqui ela ocupa 160 dos 288.
+  2. Animar exige <group> e <path> com android:name, e os alvos ficam neste
+     arquivo para nao poluir a marca usada na barra do app e no launcher.
+
+  Os pathData sao os mesmos de ic_tecmotors_mark.xml - se mudar la, mude aqui.
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="288dp"
+    android:height="288dp"
+    android:viewportWidth="288"
+    android:viewportHeight="288">
+
+    <!-- posiciona: escala o espaco de 120 para 160 e centraliza nos 288 -->
+    <group
+        android:scaleX="1.3333"
+        android:scaleY="1.3333"
+        android:translateX="64"
+        android:translateY="64">
+
+        <!-- alvo da animacao de assentamento -->
+        <group
+            android:name="mark"
+            android:pivotX="60"
+            android:pivotY="60">
+
+            <path
+                android:name="body"
+                android:fillColor="#1F5FC9"
+                android:fillType="evenOdd"
+                android:pathData="M34,14.97 L86,14.97 L112,60 L86,105.03 L34,105.03 L8,60 Z
+                                  M49,40.95 L71,40.95 L82,60 L71,79.05 L49,79.05 L38,60 Z" />
+
+            <path
+                android:name="seam"
+                android:fillColor="#E6A23C"
+                android:fillAlpha="1"
+                android:fillType="evenOdd"
+                android:pathData="M12.62,52 L107.38,52 L112,60 L8,60 Z
+                                  M42.62,52 L77.38,52 L82,60 L38,60 Z" />
+
+            <path
+                android:name="topBand"
+                android:fillColor="#2F81F7"
+                android:fillType="evenOdd"
+                android:pathData="M34,14.97 L86,14.97 L107.38,52 L12.62,52 Z
+                                  M49,40.95 L71,40.95 L77.38,52 L42.62,52 Z" />
+        </group>
+    </group>
+</vector>

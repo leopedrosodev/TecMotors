@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- A porca entra torta e menor e assenta: e o gesto de apertar. -->
+<set xmlns:android="http://schemas.android.com/apk/res/android">
+    <objectAnimator
+        android:propertyName="rotation"
+        android:valueFrom="-38"
+        android:valueTo="0"
+        android:valueType="floatType"
+        android:duration="620"
+        android:interpolator="@android:interpolator/decelerate_quint" />
+    <objectAnimator
+        android:propertyName="scaleX"
+        android:valueFrom="0.72"
+        android:valueTo="1"
+        android:valueType="floatType"
+        android:duration="620"
+        android:interpolator="@android:interpolator/decelerate_quint" />
+    <objectAnimator
+        android:propertyName="scaleY"
+        android:valueFrom="0.72"
+        android:valueTo="1"
+        android:valueType="floatType"
+        android:duration="620"
+        android:interpolator="@android:interpolator/decelerate_quint" />
+</set>

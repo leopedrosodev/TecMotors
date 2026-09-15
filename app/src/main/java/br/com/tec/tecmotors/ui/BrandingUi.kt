@@ -7,8 +7,8 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -18,13 +18,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import br.com.tec.tecmotors.R
-
-private const val LOGO_DRAWABLE_NAME = "logo_tecmotors_light"
-private const val LOGO_DRAWABLE_DARK_NAME = "logo_tecmotors_dark"
 
 @Composable
 internal fun AppVersionBadge(modifier: Modifier = Modifier) {
@@ -63,33 +62,31 @@ internal fun AppVersionBadge(modifier: Modifier = Modifier) {
     )
 }
 
+/**
+ * Marca + nome na barra superior.
+ *
+ * O nome e texto, nao imagem: acompanha o tema sem precisar de um PNG claro e
+ * outro escuro, e fica nitido em qualquer densidade.
+ */
 @Composable
-internal fun AppTopBarTitle(isDarkTheme: Boolean) {
-    val logoId = drawableIdByName(if (isDarkTheme) LOGO_DRAWABLE_DARK_NAME else LOGO_DRAWABLE_NAME)
-    val fallbackLogoId = drawableIdByName(LOGO_DRAWABLE_NAME)
-
+internal fun AppTopBarTitle() {
     Row(
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.Start
+        horizontalArrangement = Arrangement.spacedBy(10.dp)
     ) {
-        if (logoId != 0 || fallbackLogoId != 0) {
-            Image(
-                painter = painterResource(id = if (logoId != 0) logoId else fallbackLogoId),
-                contentDescription = stringResource(R.string.logo_tecmotors_light),
-                contentScale = ContentScale.Fit,
-                modifier = Modifier.height(44.dp)
-            )
-        } else {
-            Text(stringResource(R.string.app_name))
-        }
-    }
-}
-
-@Composable
-private fun drawableIdByName(name: String): Int {
-    val context = LocalContext.current
-    return remember(name, context) {
-        context.resources.getIdentifier(name, "drawable", context.packageName)
+        Image(
+            painter = painterResource(id = R.drawable.ic_tecmotors_mark),
+            contentDescription = stringResource(R.string.logo_tecmotors_light),
+            contentScale = ContentScale.Fit,
+            modifier = Modifier.size(30.dp)
+        )
+        Text(
+            text = stringResource(R.string.app_name),
+            style = MaterialTheme.typography.titleLarge,
+            fontWeight = FontWeight.Bold,
+            letterSpacing = (-0.5).sp,
+            color = MaterialTheme.colorScheme.onSurface
+        )
     }
 }
 

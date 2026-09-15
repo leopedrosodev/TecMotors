@@ -1,8 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- Camada da frente do icone adaptativo. O Android desenha 108dp e so
+     garante os 72dp centrais, entao a marca fica em 62dp. -->
 <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
     <item
-        android:width="92dp"
-        android:height="92dp"
+        android:width="62dp"
+        android:height="62dp"
         android:gravity="center"
-        android:drawable="@drawable/logo_tecmotors_light" />
+        android:drawable="@drawable/ic_tecmotors_mark" />
 </layer-list>

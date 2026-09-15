@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Marca TecMotors: porca sextavada com faces para cima, furo central e a
+  fresta ambar do tambor do odometro atravessando na altura do furo.
+
+  Geometria no viewport 120x120:
+    hexagono externo  r = 52, faces para cima
+    furo              r = 22, mesma orientacao
+    faixas            azul claro ate y=52, ambar de 52 a 60, azul escuro abaixo
+
+  Construcao: o corpo inteiro e desenhado primeiro em azul escuro, e as duas
+  faixas superiores vao por cima. Assim nenhuma emenda entre faixas deixa o
+  fundo aparecer - no maximo mostra o proprio azul escuro do corpo.
+
+  Cada caminho usa evenOdd com dois subcaminhos: o contorno externo e o furo.
+  Cores espelham ui/theme/Color.kt.
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="120"
+    android:viewportHeight="120">
+
+    <!-- corpo: hexagono inteiro menos o furo -->
+    <path
+        android:fillColor="#1F5FC9"
+        android:fillType="evenOdd"
+        android:pathData="M34,14.97 L86,14.97 L112,60 L86,105.03 L34,105.03 L8,60 Z
+                          M49,40.95 L71,40.95 L82,60 L71,79.05 L49,79.05 L38,60 Z" />
+
+    <!-- fresta do tambor: ambar, na altura do furo -->
+    <path
+        android:fillColor="#E6A23C"
+        android:fillType="evenOdd"
+        android:pathData="M12.62,52 L107.38,52 L112,60 L8,60 Z
+                          M42.62,52 L77.38,52 L82,60 L38,60 Z" />
+
+    <!-- faixa superior: azul claro -->
+    <path
+        android:fillColor="#2F81F7"
+        android:fillType="evenOdd"
+        android:pathData="M34,14.97 L86,14.97 L107.38,52 L12.62,52 Z
+                          M49,40.95 L71,40.95 L77.38,52 L42.62,52 Z" />
+
+</vector>

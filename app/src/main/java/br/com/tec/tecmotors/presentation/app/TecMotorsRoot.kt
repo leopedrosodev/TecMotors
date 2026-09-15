@@ -315,7 +315,7 @@ fun TecMotorsRoot(
                     },
                     title = {
                         if (destination == AppDestination.HOME) {
-                            AppTopBarTitle(isDarkTheme = appState.darkThemeEnabled)
+                            AppTopBarTitle()
                         } else {
                             Text(stringResource(destination.titleRes))
                         }

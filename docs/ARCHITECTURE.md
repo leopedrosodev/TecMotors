@@ -83,6 +83,13 @@ Isso nao e migracao de schema SQLite, e migracao de fonte de dados legada.
 
 ## Sincronizacao
 - `SyncRepositoryImpl` encapsula Firebase Auth + Firestore.
+- Caminho remoto: `tec_motors_users/{uid}`, um documento por conta.
+- Regras de acesso versionadas em `firestore.rules`: cada conta so alcanca o
+  proprio documento. Publicar pelo console ou com `firebase deploy --only
+  firestore:rules`.
+- `app/google-services.json` fica fora do git. Cada maquina que for compilar
+  precisa ter sua SHA-1 de assinatura registrada no projeto do Firebase, senao
+  o login falha com DEVELOPER_ERROR.
 - Estrategia de conflito atual: timestamp `updatedAtMillis` mais recente vence.
 - Compatibilidade mantida para snapshots antigos (sem `maintenanceRecords`).
 

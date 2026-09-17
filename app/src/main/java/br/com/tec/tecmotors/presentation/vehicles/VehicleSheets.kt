@@ -31,7 +31,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import br.com.tec.tecmotors.R
 import br.com.tec.tecmotors.domain.model.VehicleType
-import br.com.tec.tecmotors.presentation.common.DateBrField
+import br.com.tec.tecmotors.presentation.common.DateBrPickerField
 import br.com.tec.tecmotors.presentation.common.DecimalField
 import br.com.tec.tecmotors.presentation.common.VehicleFilterRow
 import br.com.tec.tecmotors.presentation.common.formatInteger
@@ -74,7 +74,7 @@ fun OdometerSheet(
                 )
             }
 
-            DateBrField(
+            DateBrPickerField(
                 value = state.dateText,
                 onValueChange = { onEvent(VehiclesUiEvent.ChangeDate(it)) },
                 modifier = Modifier.fillMaxWidth(),

@@ -95,10 +95,21 @@ class MaintenanceViewModel(
             }
 
             is MaintenanceUiEvent.SelectType -> {
+                // Escolher o tipo ja resolve titulo e vencimento: o app conhece o
+                // intervalo padrao do componente e o odometro atual, entao nao faz
+                // sentido pedir essa conta ao usuario.
+                val current = uiState.value.currentOdometerKm
+                // Sem separador de milhar: este texto volta por parseDecimal, e
+                // "50.320" seria lido como 50,32.
+                val suggestedDueKm = current?.let { km ->
+                    (km + event.type.defaultIntervalKm).toLong().toString()
+                }
+
                 localState.update {
                     it.copy(
                         selectedType = event.type,
-                        titleText = if (it.titleText.isBlank()) event.type.label else it.titleText
+                        titleText = event.type.label,
+                        dueKmText = suggestedDueKm ?: it.dueKmText
                     )
                 }
             }

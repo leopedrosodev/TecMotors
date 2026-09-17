@@ -14,6 +14,10 @@ enum class AppDestination(val titleRes: Int, val isPrimary: Boolean) {
     CALCULATOR(R.string.tab_calculator, isPrimary = false),
     REFUEL_HISTORY(R.string.tab_refuels, isPrimary = false);
 
+    /** Destinos onde faz sentido lancar um abastecimento pelo FAB. */
+    val showsQuickRefuel: Boolean
+        get() = isPrimary || this == REFUEL_HISTORY
+
     companion object {
         val primaryDestinations: List<AppDestination> = entries.filter { it.isPrimary }
     }

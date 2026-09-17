@@ -379,7 +379,7 @@ fun TecMotorsRoot(
                 }
             },
             floatingActionButton = {
-                if (destination.isPrimary) {
+                if (destination.showsQuickRefuel) {
                     ExtendedFloatingActionButton(
                         onClick = { appViewModel.onEvent(AppUiEvent.SetQuickRefuelVisible(true)) },
                         containerColor = MaterialTheme.colorScheme.primary,

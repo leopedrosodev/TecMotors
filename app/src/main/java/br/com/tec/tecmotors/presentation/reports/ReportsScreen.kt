@@ -41,7 +41,7 @@ import br.com.tec.tecmotors.R
 import br.com.tec.tecmotors.data.CsvExporter
 import br.com.tec.tecmotors.domain.model.LocalStateSnapshot
 import br.com.tec.tecmotors.presentation.common.ChartBar
-import br.com.tec.tecmotors.presentation.common.DateBrField
+import br.com.tec.tecmotors.presentation.common.DateBrPickerField
 import br.com.tec.tecmotors.presentation.common.MetricBarChart
 import br.com.tec.tecmotors.presentation.common.MoneyField
 import br.com.tec.tecmotors.presentation.common.UiFeedback
@@ -129,13 +129,13 @@ fun ReportsScreen(
                     verticalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        DateBrField(
+                        DateBrPickerField(
                             value = state.customStartDateText,
                             onValueChange = { onEvent(ReportsUiEvent.ChangeCustomStartDate(it)) },
                             modifier = Modifier.weight(1f),
                             label = stringResource(R.string.label_period_start)
                         )
-                        DateBrField(
+                        DateBrPickerField(
                             value = state.customEndDateText,
                             onValueChange = { onEvent(ReportsUiEvent.ChangeCustomEndDate(it)) },
                             modifier = Modifier.weight(1f),

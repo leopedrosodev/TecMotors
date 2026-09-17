@@ -22,7 +22,18 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.foundation.layout.size
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ExpandLess
+import androidx.compose.material.icons.filled.ExpandMore
+import androidx.compose.material3.Icon
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
@@ -30,9 +41,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import br.com.tec.tecmotors.R
 import br.com.tec.tecmotors.domain.model.MaintenanceType
-import br.com.tec.tecmotors.presentation.common.DateBrField
+import br.com.tec.tecmotors.presentation.common.DateBrPickerField
 import br.com.tec.tecmotors.presentation.common.DecimalField
 import br.com.tec.tecmotors.presentation.common.MoneyField
+import br.com.tec.tecmotors.presentation.common.formatInteger
 
 /**
  * Lancamento de manutencao. Era um formulario no meio da tela, empurrando o
@@ -46,6 +58,7 @@ fun AddMaintenanceSheet(
     onDismiss: () -> Unit
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    var showMore by remember { mutableStateOf(false) }
 
     val context = LocalContext.current
     val receiptPicker = rememberLauncherForActivityResult(
@@ -104,12 +117,6 @@ fun AddMaintenanceSheet(
                 shape = RoundedCornerShape(12.dp)
             )
 
-            Text(
-                text = stringResource(R.string.maintenance_sheet_due_hint),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-
             DecimalField(
                 value = state.dueKmText,
                 onValueChange = { onEvent(MaintenanceUiEvent.ChangeDueKm(it)) },
@@ -117,39 +124,16 @@ fun AddMaintenanceSheet(
                 label = stringResource(R.string.label_due_km_optional)
             )
 
-            DateBrField(
-                value = state.dueDateText,
-                onValueChange = { onEvent(MaintenanceUiEvent.ChangeDueDate(it)) },
-                modifier = Modifier.fillMaxWidth(),
-                label = stringResource(R.string.label_due_date_optional)
-            )
-
-            MoneyField(
-                value = state.estimatedCostText,
-                onValueChange = { onEvent(MaintenanceUiEvent.ChangeEstimatedCost(it)) },
-                modifier = Modifier.fillMaxWidth(),
-                label = stringResource(R.string.label_estimated_cost_optional)
-            )
-
-            OutlinedTextField(
-                value = state.notesText,
-                onValueChange = { onEvent(MaintenanceUiEvent.ChangeNotes(it)) },
-                modifier = Modifier.fillMaxWidth(),
-                label = { Text(stringResource(R.string.label_notes)) },
-                shape = RoundedCornerShape(12.dp)
-            )
-
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                OutlinedButton(onClick = { receiptPicker.launch(arrayOf("image/*")) }) {
-                    Text(stringResource(R.string.action_attach_receipt))
-                }
-                if (state.receiptImageUri != null) {
-                    OutlinedButton(
-                        onClick = { onEvent(MaintenanceUiEvent.SetReceiptImageUri(null)) }
-                    ) {
-                        Text(stringResource(R.string.action_remove_attachment))
-                    }
-                }
+            state.currentOdometerKm?.let { current ->
+                Text(
+                    text = stringResource(
+                        R.string.maintenance_due_helper,
+                        formatInteger(current),
+                        formatInteger(state.selectedType.defaultIntervalKm)
+                    ),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
             }
 
             Button(
@@ -162,6 +146,60 @@ fun AddMaintenanceSheet(
                     style = MaterialTheme.typography.titleMedium,
                     modifier = Modifier.padding(vertical = 6.dp)
                 )
+            }
+
+            TextButton(
+                onClick = { showMore = !showMore },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Icon(
+                    imageVector = if (showMore) Icons.Filled.ExpandLess else Icons.Filled.ExpandMore,
+                    contentDescription = null,
+                    modifier = Modifier.size(18.dp)
+                )
+                Text(
+                    text = stringResource(R.string.maintenance_more_options),
+                    modifier = Modifier.padding(start = 8.dp)
+                )
+            }
+
+            AnimatedVisibility(visible = showMore) {
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    DateBrPickerField(
+                        value = state.dueDateText,
+                        onValueChange = { onEvent(MaintenanceUiEvent.ChangeDueDate(it)) },
+                        modifier = Modifier.fillMaxWidth(),
+                        label = stringResource(R.string.label_due_date_optional)
+                    )
+
+                    MoneyField(
+                        value = state.estimatedCostText,
+                        onValueChange = { onEvent(MaintenanceUiEvent.ChangeEstimatedCost(it)) },
+                        modifier = Modifier.fillMaxWidth(),
+                        label = stringResource(R.string.label_estimated_cost_optional)
+                    )
+
+                    OutlinedTextField(
+                        value = state.notesText,
+                        onValueChange = { onEvent(MaintenanceUiEvent.ChangeNotes(it)) },
+                        modifier = Modifier.fillMaxWidth(),
+                        label = { Text(stringResource(R.string.label_notes)) },
+                        shape = RoundedCornerShape(12.dp)
+                    )
+
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        OutlinedButton(onClick = { receiptPicker.launch(arrayOf("image/*")) }) {
+                            Text(stringResource(R.string.action_attach_receipt))
+                        }
+                        if (state.receiptImageUri != null) {
+                            OutlinedButton(
+                                onClick = { onEvent(MaintenanceUiEvent.SetReceiptImageUri(null)) }
+                            ) {
+                                Text(stringResource(R.string.action_remove_attachment))
+                            }
+                        }
+                    }
+                }
             }
         }
     }

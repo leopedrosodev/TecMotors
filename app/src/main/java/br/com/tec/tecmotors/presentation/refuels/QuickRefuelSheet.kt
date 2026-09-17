@@ -48,7 +48,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import br.com.tec.tecmotors.R
 import br.com.tec.tecmotors.domain.model.FuelUsageType
-import br.com.tec.tecmotors.presentation.common.DateBrField
+import br.com.tec.tecmotors.presentation.common.DateBrPickerField
 import br.com.tec.tecmotors.presentation.common.formatCurrency
 import br.com.tec.tecmotors.presentation.common.formatInteger
 import br.com.tec.tecmotors.presentation.common.formatNumber
@@ -123,7 +123,7 @@ fun QuickRefuelSheet(
                 }
             }
 
-            DateBrField(
+            DateBrPickerField(
                 value = state.dateText,
                 onValueChange = { onEvent(RefuelsUiEvent.ChangeDate(it)) },
                 modifier = Modifier.fillMaxWidth(),

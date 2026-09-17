@@ -41,6 +41,9 @@ class SyncRepositoryImpl(
     }
 
     override fun signOut() {
+        // Sem a guarda, FirebaseAuth.getInstance() estoura quando nao ha
+        // google-services.json e tocar em "sair" derruba o app.
+        if (!firebaseAvailable) return
         auth.signOut()
     }
 

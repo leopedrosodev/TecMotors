@@ -340,4 +340,19 @@
     <string name="refuels_row_detail">%1$s · %2$s L · %3$s km</string>
     <string name="refuels_row_price">%1$s/L</string>
     <string name="refuels_station_summary">%1$s/L · %2$d×</string>
+
+    <string name="quick_refuel_title_edit">Corrigir abastecimento</string>
+    <string name="action_save_changes">Salvar correção</string>
+    <string name="action_delete">Excluir</string>
+    <string name="refuels_tap_to_edit">Toque em um registro para corrigir ou excluir</string>
+
+    <!-- Calculadora -->
+    <string name="calc_target_liters">Litros</string>
+    <string name="calc_target_distance">Distância</string>
+    <string name="calc_target_consumption">Consumo</string>
+    <string name="calc_what_to_find">O que você quer descobrir</string>
+    <string name="calc_use_vehicle">Usar meus dados: %1$s km/L · %2$s/L</string>
+    <string name="calc_total">Custo estimado</string>
+    <string name="calc_total_detail">%1$s litros no preço informado</string>
+    <string name="calc_total_hint">Informe os dois campos acima e o preço por litro.</string>
 </resources>

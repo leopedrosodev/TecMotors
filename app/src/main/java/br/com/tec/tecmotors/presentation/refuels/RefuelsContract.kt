@@ -21,6 +21,11 @@ sealed interface RefuelsUiEvent {
 
     /** Limpa o rascunho do registro rapido sem gravar nada. */
     data object DiscardQuickRefuel : RefuelsUiEvent
+
+    /** Carrega um registro existente no rascunho para corrigi-lo. */
+    data class StartEditing(val recordId: Long) : RefuelsUiEvent
+
+    data class DeleteRefuel(val recordId: Long) : RefuelsUiEvent
 }
 
 data class StationInsight(
@@ -48,8 +53,13 @@ data class RefuelsUiState(
     val lastStationName: String = "",
     val computedPricePerLiter: Double? = null,
     val distanceSinceLastKm: Double? = null,
-    val estimatedKmPerLiter: Double? = null
+    val estimatedKmPerLiter: Double? = null,
+    /** Quando preenchido, salvar corrige este registro em vez de criar outro. */
+    val editingRecordId: Long? = null
 ) {
+    val isEditing: Boolean
+        get() = editingRecordId != null
+
     val quickEntryReady: Boolean
         get() = selectedVehicleId > 0L && computedPricePerLiter != null
 }

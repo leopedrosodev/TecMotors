@@ -163,6 +163,40 @@ class ReportsViewModelTest {
             usageType: br.com.tec.tecmotors.domain.model.FuelUsageType,
             receiptImageUri: String?
         ) = Unit
+
+        override suspend fun updateRefuel(
+            recordId: Long,
+            vehicleId: Long,
+            dateEpochDay: Long,
+            odometerKm: Double,
+            liters: Double,
+            pricePerLiter: Double,
+            stationName: String,
+            usageType: br.com.tec.tecmotors.domain.model.FuelUsageType,
+            receiptImageUri: String?
+        ) {
+            records.value = records.value.map { record ->
+                if (record.id != recordId) {
+                    record
+                } else {
+                    record.copy(
+                        vehicleId = vehicleId,
+                        dateEpochDay = dateEpochDay,
+                        odometerKm = odometerKm,
+                        liters = liters,
+                        pricePerLiter = pricePerLiter,
+                        stationName = stationName,
+                        usageType = usageType,
+                        receiptImageUri = receiptImageUri
+                    )
+                }
+            }
+        }
+
+        override suspend fun deleteRefuel(recordId: Long) {
+            records.value = records.value.filterNot { it.id == recordId }
+        }
+
     }
 
     private class FakeOdometerRepository : OdometerRepository {

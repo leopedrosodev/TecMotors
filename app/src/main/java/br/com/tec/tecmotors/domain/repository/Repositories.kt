@@ -33,6 +33,20 @@ interface RefuelRepository {
         usageType: FuelUsageType,
         receiptImageUri: String?
     )
+
+    suspend fun updateRefuel(
+        recordId: Long,
+        vehicleId: Long,
+        dateEpochDay: Long,
+        odometerKm: Double,
+        liters: Double,
+        pricePerLiter: Double,
+        stationName: String,
+        usageType: FuelUsageType,
+        receiptImageUri: String?
+    )
+
+    suspend fun deleteRefuel(recordId: Long)
 }
 
 interface OdometerRepository {

@@ -5,10 +5,13 @@ import androidx.lifecycle.viewModelScope
 import br.com.tec.tecmotors.domain.model.FuelRecord
 import br.com.tec.tecmotors.domain.model.OdometerRecord
 import br.com.tec.tecmotors.domain.usecase.AddRefuelUseCase
+import br.com.tec.tecmotors.domain.usecase.DeleteRefuelUseCase
 import br.com.tec.tecmotors.domain.usecase.ObserveOdometersUseCase
 import br.com.tec.tecmotors.domain.usecase.ObserveRefuelsUseCase
 import br.com.tec.tecmotors.domain.usecase.ObserveVehiclesUseCase
+import br.com.tec.tecmotors.domain.usecase.UpdateRefuelUseCase
 import br.com.tec.tecmotors.presentation.common.UiFeedback
+import br.com.tec.tecmotors.presentation.common.formatDate
 import br.com.tec.tecmotors.presentation.common.parseDateBrOrIso
 import br.com.tec.tecmotors.presentation.common.parseDecimal
 import br.com.tec.tecmotors.presentation.common.todayBr
@@ -21,12 +24,15 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import java.util.Locale
 
 class RefuelsViewModel(
     private val observeVehiclesUseCase: ObserveVehiclesUseCase,
     private val observeRefuelsUseCase: ObserveRefuelsUseCase,
     private val observeOdometersUseCase: ObserveOdometersUseCase,
-    private val addRefuelUseCase: AddRefuelUseCase
+    private val addRefuelUseCase: AddRefuelUseCase,
+    private val updateRefuelUseCase: UpdateRefuelUseCase,
+    private val deleteRefuelUseCase: DeleteRefuelUseCase
 ) : ViewModel() {
     private val localState = MutableStateFlow(RefuelsUiState(dateText = todayBr()))
     private val _events = MutableSharedFlow<UiFeedback>(extraBufferCapacity = 1)
@@ -112,6 +118,36 @@ class RefuelsViewModel(
 
             RefuelsUiEvent.DiscardQuickRefuel -> clearDraft()
 
+            is RefuelsUiEvent.StartEditing -> {
+                val record = uiState.value.fuelRecords.firstOrNull { it.id == event.recordId }
+                    ?: return
+
+                localState.update {
+                    it.copy(
+                        editingRecordId = record.id,
+                        selectedVehicleId = record.vehicleId,
+                        dateText = formatDate(record.dateEpochDay),
+                        odometerText = decimalInput(record.odometerKm),
+                        litersText = decimalInput(record.liters),
+                        totalPaidText = decimalInput(record.totalCost),
+                        priceText = decimalInput(record.pricePerLiter),
+                        stationText = record.stationName,
+                        selectedUsageType = record.usageType,
+                        receiptImageUri = record.receiptImageUri
+                    )
+                }
+            }
+
+            is RefuelsUiEvent.DeleteRefuel -> {
+                viewModelScope.launch {
+                    deleteRefuelUseCase(event.recordId)
+                    if (uiState.value.editingRecordId == event.recordId) {
+                        clearDraft()
+                    }
+                    emitFeedback(UiFeedback.Success("Abastecimento excluido"))
+                }
+            }
+
             RefuelsUiEvent.SaveRefuel -> {
                 val state = uiState.value
                 val date = parseDateBrOrIso(state.dateText)
@@ -172,19 +208,39 @@ class RefuelsViewModel(
         stationName: String,
         state: RefuelsUiState
     ) {
+        val editingId = state.editingRecordId
+
         viewModelScope.launch {
-            addRefuelUseCase(
-                vehicleId = vehicleId,
-                dateEpochDay = dateEpochDay,
-                odometerKm = odometerKm,
-                liters = liters,
-                pricePerLiter = pricePerLiter,
-                stationName = stationName,
-                usageType = state.selectedUsageType,
-                receiptImageUri = state.receiptImageUri
-            )
+            if (editingId == null) {
+                addRefuelUseCase(
+                    vehicleId = vehicleId,
+                    dateEpochDay = dateEpochDay,
+                    odometerKm = odometerKm,
+                    liters = liters,
+                    pricePerLiter = pricePerLiter,
+                    stationName = stationName,
+                    usageType = state.selectedUsageType,
+                    receiptImageUri = state.receiptImageUri
+                )
+            } else {
+                updateRefuelUseCase(
+                    recordId = editingId,
+                    vehicleId = vehicleId,
+                    dateEpochDay = dateEpochDay,
+                    odometerKm = odometerKm,
+                    liters = liters,
+                    pricePerLiter = pricePerLiter,
+                    stationName = stationName,
+                    usageType = state.selectedUsageType,
+                    receiptImageUri = state.receiptImageUri
+                )
+            }
             clearDraft()
-            emitFeedback(UiFeedback.Success("Abastecimento salvo"))
+            emitFeedback(
+                UiFeedback.Success(
+                    if (editingId == null) "Abastecimento salvo" else "Abastecimento corrigido"
+                )
+            )
         }
     }
 
@@ -197,8 +253,23 @@ class RefuelsViewModel(
                 priceText = "",
                 totalPaidText = "",
                 // posto fica: o proximo abastecimento costuma ser no mesmo lugar
-                receiptImageUri = null
+                receiptImageUri = null,
+                editingRecordId = null
             )
+        }
+    }
+
+    /**
+     * Numero para dentro de campo de texto.
+     *
+     * Sem separador de milhar de proposito: o valor volta por [parseDecimal], e
+     * "45.320" seria lido como 45,32.
+     */
+    private fun decimalInput(value: Double): String {
+        return if (value % 1.0 == 0.0) {
+            value.toLong().toString()
+        } else {
+            String.format(Locale.forLanguageTag("pt-BR"), "%.2f", value)
         }
     }
 

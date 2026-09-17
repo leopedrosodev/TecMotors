@@ -302,6 +302,40 @@ class HomeViewModelTest {
             usageType: FuelUsageType,
             receiptImageUri: String?
         ) = Unit
+
+        override suspend fun updateRefuel(
+            recordId: Long,
+            vehicleId: Long,
+            dateEpochDay: Long,
+            odometerKm: Double,
+            liters: Double,
+            pricePerLiter: Double,
+            stationName: String,
+            usageType: FuelUsageType,
+            receiptImageUri: String?
+        ) {
+            state.value = state.value.map { record ->
+                if (record.id != recordId) {
+                    record
+                } else {
+                    record.copy(
+                        vehicleId = vehicleId,
+                        dateEpochDay = dateEpochDay,
+                        odometerKm = odometerKm,
+                        liters = liters,
+                        pricePerLiter = pricePerLiter,
+                        stationName = stationName,
+                        usageType = usageType,
+                        receiptImageUri = receiptImageUri
+                    )
+                }
+            }
+        }
+
+        override suspend fun deleteRefuel(recordId: Long) {
+            state.value = state.value.filterNot { it.id == recordId }
+        }
+
     }
 
     private class FakeOdometerRepository(records: List<OdometerRecord>) : OdometerRepository {

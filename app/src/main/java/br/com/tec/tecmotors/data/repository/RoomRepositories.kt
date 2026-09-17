@@ -121,6 +121,42 @@ class RefuelRepositoryImpl(
         )
         settingsRepository.touchDataUpdatedAt()
     }
+
+    /**
+     * Regrava o registro mantendo o id. O upsert usa REPLACE, entao o mesmo id
+     * sobrescreve a linha - nao gera duplicata.
+     */
+    override suspend fun updateRefuel(
+        recordId: Long,
+        vehicleId: Long,
+        dateEpochDay: Long,
+        odometerKm: Double,
+        liters: Double,
+        pricePerLiter: Double,
+        stationName: String,
+        usageType: FuelUsageType,
+        receiptImageUri: String?
+    ) {
+        database.fuelDao().upsert(
+            FuelRecordEntity(
+                id = recordId,
+                vehicleId = vehicleId,
+                dateEpochDay = dateEpochDay,
+                odometerKm = odometerKm,
+                liters = liters,
+                pricePerLiter = pricePerLiter,
+                stationName = stationName.trim(),
+                usageType = usageType.name,
+                receiptImageUri = receiptImageUri
+            )
+        )
+        settingsRepository.touchDataUpdatedAt()
+    }
+
+    override suspend fun deleteRefuel(recordId: Long) {
+        database.fuelDao().deleteById(recordId)
+        settingsRepository.touchDataUpdatedAt()
+    }
 }
 
 class MaintenanceRepositoryImpl(

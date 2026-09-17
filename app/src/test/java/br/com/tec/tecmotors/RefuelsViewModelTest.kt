@@ -9,9 +9,11 @@ import br.com.tec.tecmotors.domain.repository.OdometerRepository
 import br.com.tec.tecmotors.domain.repository.RefuelRepository
 import br.com.tec.tecmotors.domain.repository.VehicleRepository
 import br.com.tec.tecmotors.domain.usecase.AddRefuelUseCase
+import br.com.tec.tecmotors.domain.usecase.DeleteRefuelUseCase
 import br.com.tec.tecmotors.domain.usecase.ObserveOdometersUseCase
 import br.com.tec.tecmotors.domain.usecase.ObserveRefuelsUseCase
 import br.com.tec.tecmotors.domain.usecase.ObserveVehiclesUseCase
+import br.com.tec.tecmotors.domain.usecase.UpdateRefuelUseCase
 import br.com.tec.tecmotors.presentation.common.UiFeedback
 import br.com.tec.tecmotors.presentation.refuels.RefuelsUiEvent
 import br.com.tec.tecmotors.presentation.refuels.RefuelsViewModel
@@ -44,7 +46,9 @@ class RefuelsViewModelTest {
             observeVehiclesUseCase = ObserveVehiclesUseCase(vehicleRepository),
             observeRefuelsUseCase = ObserveRefuelsUseCase(refuelRepository),
             observeOdometersUseCase = ObserveOdometersUseCase(FakeOdometerRepository()),
-            addRefuelUseCase = AddRefuelUseCase(refuelRepository)
+            addRefuelUseCase = AddRefuelUseCase(refuelRepository),
+            updateRefuelUseCase = UpdateRefuelUseCase(refuelRepository),
+            deleteRefuelUseCase = DeleteRefuelUseCase(refuelRepository)
         )
         val collectJob: Job = launch { viewModel.uiState.collect { } }
         val feedbacksDeferred = async { viewModel.events.take(2).toList() }
@@ -75,7 +79,9 @@ class RefuelsViewModelTest {
             observeVehiclesUseCase = ObserveVehiclesUseCase(vehicleRepository),
             observeRefuelsUseCase = ObserveRefuelsUseCase(refuelRepository),
             observeOdometersUseCase = ObserveOdometersUseCase(FakeOdometerRepository()),
-            addRefuelUseCase = AddRefuelUseCase(refuelRepository)
+            addRefuelUseCase = AddRefuelUseCase(refuelRepository),
+            updateRefuelUseCase = UpdateRefuelUseCase(refuelRepository),
+            deleteRefuelUseCase = DeleteRefuelUseCase(refuelRepository)
         )
         val collectJob: Job = launch { viewModel.uiState.collect { } }
         advanceUntilIdle()
@@ -106,7 +112,9 @@ class RefuelsViewModelTest {
             observeVehiclesUseCase = ObserveVehiclesUseCase(vehicleRepository),
             observeRefuelsUseCase = ObserveRefuelsUseCase(refuelRepository),
             observeOdometersUseCase = ObserveOdometersUseCase(FakeOdometerRepository()),
-            addRefuelUseCase = AddRefuelUseCase(refuelRepository)
+            addRefuelUseCase = AddRefuelUseCase(refuelRepository),
+            updateRefuelUseCase = UpdateRefuelUseCase(refuelRepository),
+            deleteRefuelUseCase = DeleteRefuelUseCase(refuelRepository)
         )
         val collectJob: Job = launch { viewModel.uiState.collect { } }
         val feedbackDeferred = async { viewModel.events.take(1).toList() }
@@ -135,7 +143,9 @@ class RefuelsViewModelTest {
             observeVehiclesUseCase = ObserveVehiclesUseCase(vehicleRepository),
             observeRefuelsUseCase = ObserveRefuelsUseCase(refuelRepository),
             observeOdometersUseCase = ObserveOdometersUseCase(FakeOdometerRepository()),
-            addRefuelUseCase = AddRefuelUseCase(refuelRepository)
+            addRefuelUseCase = AddRefuelUseCase(refuelRepository),
+            updateRefuelUseCase = UpdateRefuelUseCase(refuelRepository),
+            deleteRefuelUseCase = DeleteRefuelUseCase(refuelRepository)
         )
         val collectJob: Job = launch { viewModel.uiState.collect { } }
         advanceUntilIdle()
@@ -158,6 +168,79 @@ class RefuelsViewModelTest {
         assertEquals(6.0, state.computedPricePerLiter!!, 0.001)
         assertEquals(420.0, state.distanceSinceLastKm!!, 0.001)
         assertEquals(14.0, state.estimatedKmPerLiter!!, 0.001)
+        collectJob.cancel()
+    }
+
+    @Test
+    fun startEditing_thenSave_corrigeSemCriarOutroRegistro() = runTest {
+        val vehicleRepository = FakeVehicleRepository()
+        val refuelRepository = FakeRefuelRepository()
+
+        val viewModel = RefuelsViewModel(
+            observeVehiclesUseCase = ObserveVehiclesUseCase(vehicleRepository),
+            observeRefuelsUseCase = ObserveRefuelsUseCase(refuelRepository),
+            observeOdometersUseCase = ObserveOdometersUseCase(FakeOdometerRepository()),
+            addRefuelUseCase = AddRefuelUseCase(refuelRepository),
+            updateRefuelUseCase = UpdateRefuelUseCase(refuelRepository),
+            deleteRefuelUseCase = DeleteRefuelUseCase(refuelRepository)
+        )
+        val collectJob: Job = launch { viewModel.uiState.collect { } }
+        advanceUntilIdle()
+
+        viewModel.onEvent(RefuelsUiEvent.ChangeTotalPaid("180"))
+        viewModel.onEvent(RefuelsUiEvent.ChangeLiters("30"))
+        viewModel.onEvent(RefuelsUiEvent.ChangeOdometer("45000"))
+        advanceUntilIdle()
+        viewModel.onEvent(RefuelsUiEvent.SaveQuickRefuel)
+        advanceUntilIdle()
+
+        val salvo = refuelRepository.lastAdded!!
+        assertEquals(1, viewModel.uiState.value.fuelRecords.size)
+
+        viewModel.onEvent(RefuelsUiEvent.StartEditing(salvo.id))
+        advanceUntilIdle()
+        assertEquals(salvo.id, viewModel.uiState.value.editingRecordId)
+
+        viewModel.onEvent(RefuelsUiEvent.ChangeTotalPaid("200"))
+        advanceUntilIdle()
+        viewModel.onEvent(RefuelsUiEvent.SaveQuickRefuel)
+        advanceUntilIdle()
+
+        val registros = viewModel.uiState.value.fuelRecords
+        assertEquals(1, registros.size)
+        assertEquals(200.0, registros.single().totalCost, 0.001)
+        assertEquals(null, viewModel.uiState.value.editingRecordId)
+        collectJob.cancel()
+    }
+
+    @Test
+    fun deleteRefuel_removeDaLista() = runTest {
+        val vehicleRepository = FakeVehicleRepository()
+        val refuelRepository = FakeRefuelRepository()
+
+        val viewModel = RefuelsViewModel(
+            observeVehiclesUseCase = ObserveVehiclesUseCase(vehicleRepository),
+            observeRefuelsUseCase = ObserveRefuelsUseCase(refuelRepository),
+            observeOdometersUseCase = ObserveOdometersUseCase(FakeOdometerRepository()),
+            addRefuelUseCase = AddRefuelUseCase(refuelRepository),
+            updateRefuelUseCase = UpdateRefuelUseCase(refuelRepository),
+            deleteRefuelUseCase = DeleteRefuelUseCase(refuelRepository)
+        )
+        val collectJob: Job = launch { viewModel.uiState.collect { } }
+        advanceUntilIdle()
+
+        viewModel.onEvent(RefuelsUiEvent.ChangeTotalPaid("100"))
+        viewModel.onEvent(RefuelsUiEvent.ChangeLiters("20"))
+        viewModel.onEvent(RefuelsUiEvent.ChangeOdometer("40000"))
+        advanceUntilIdle()
+        viewModel.onEvent(RefuelsUiEvent.SaveQuickRefuel)
+        advanceUntilIdle()
+
+        val id = refuelRepository.lastAdded!!.id
+        viewModel.onEvent(RefuelsUiEvent.DeleteRefuel(id))
+        advanceUntilIdle()
+
+        assertEquals(emptyList<Any>(), viewModel.uiState.value.fuelRecords)
         collectJob.cancel()
     }
 
@@ -222,5 +305,39 @@ class RefuelsViewModelTest {
             lastAdded = added
             records.value = records.value + added
         }
+
+        override suspend fun updateRefuel(
+            recordId: Long,
+            vehicleId: Long,
+            dateEpochDay: Long,
+            odometerKm: Double,
+            liters: Double,
+            pricePerLiter: Double,
+            stationName: String,
+            usageType: FuelUsageType,
+            receiptImageUri: String?
+        ) {
+            records.value = records.value.map { record ->
+                if (record.id != recordId) {
+                    record
+                } else {
+                    record.copy(
+                        vehicleId = vehicleId,
+                        dateEpochDay = dateEpochDay,
+                        odometerKm = odometerKm,
+                        liters = liters,
+                        pricePerLiter = pricePerLiter,
+                        stationName = stationName,
+                        usageType = usageType,
+                        receiptImageUri = receiptImageUri
+                    )
+                }
+            }
+        }
+
+        override suspend fun deleteRefuel(recordId: Long) {
+            records.value = records.value.filterNot { it.id == recordId }
+        }
+
     }
 }

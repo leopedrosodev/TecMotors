@@ -65,8 +65,10 @@ import br.com.tec.tecmotors.presentation.home.HomeViewModel
 import br.com.tec.tecmotors.presentation.maintenance.MaintenanceScreen
 import br.com.tec.tecmotors.presentation.maintenance.MaintenanceViewModel
 import br.com.tec.tecmotors.presentation.refuels.FuelCalculatorScreen
+import br.com.tec.tecmotors.presentation.refuels.FuelCalculatorViewModel
 import br.com.tec.tecmotors.presentation.refuels.QuickRefuelSheet
 import br.com.tec.tecmotors.presentation.refuels.RefuelsScreen
+import br.com.tec.tecmotors.presentation.refuels.RefuelsUiEvent
 import br.com.tec.tecmotors.presentation.refuels.RefuelsViewModel
 import br.com.tec.tecmotors.presentation.reports.ReportsScreen
 import br.com.tec.tecmotors.presentation.reports.ReportsViewModel
@@ -131,7 +133,9 @@ fun TecMotorsRoot(
                     observeVehiclesUseCase = appContainer.observeVehiclesUseCase,
                     observeRefuelsUseCase = appContainer.observeRefuelsUseCase,
                     observeOdometersUseCase = appContainer.observeOdometersUseCase,
-                    addRefuelUseCase = appContainer.addRefuelUseCase
+                    addRefuelUseCase = appContainer.addRefuelUseCase,
+                    updateRefuelUseCase = appContainer.updateRefuelUseCase,
+                    deleteRefuelUseCase = appContainer.deleteRefuelUseCase
                 )
             }
         }
@@ -169,6 +173,18 @@ fun TecMotorsRoot(
             }
         }
     )
+    val calculatorViewModel: FuelCalculatorViewModel = viewModel(
+        factory = remember(appContainer) {
+            simpleViewModelFactory {
+                FuelCalculatorViewModel(
+                    observeVehiclesUseCase = appContainer.observeVehiclesUseCase,
+                    observeRefuelsUseCase = appContainer.observeRefuelsUseCase,
+                    observeOdometersUseCase = appContainer.observeOdometersUseCase,
+                    calculateVehicleSummaryUseCase = appContainer.calculateVehicleSummaryUseCase
+                )
+            }
+        }
+    )
     val accountSyncViewModel: AccountSyncViewModel = viewModel(
         factory = remember(appContainer) {
             simpleViewModelFactory {
@@ -192,6 +208,7 @@ fun TecMotorsRoot(
     val refuelsState by refuelsViewModel.uiState.collectAsStateWithLifecycle()
     val maintenanceState by maintenanceViewModel.uiState.collectAsStateWithLifecycle()
     val reportsState by reportsViewModel.uiState.collectAsStateWithLifecycle()
+    val calculatorState by calculatorViewModel.uiState.collectAsStateWithLifecycle()
     val accountState by accountSyncViewModel.uiState.collectAsStateWithLifecycle()
 
     val context = LocalContext.current
@@ -432,11 +449,18 @@ fun TecMotorsRoot(
                         onEvent = vehiclesViewModel::onEvent
                     )
 
-                    AppDestination.CALCULATOR -> FuelCalculatorScreen()
+                    AppDestination.CALCULATOR -> FuelCalculatorScreen(
+                        state = calculatorState,
+                        onEvent = calculatorViewModel::onEvent
+                    )
 
                     AppDestination.REFUEL_HISTORY -> RefuelsScreen(
                         state = refuelsState,
-                        onEvent = refuelsViewModel::onEvent
+                        onEvent = refuelsViewModel::onEvent,
+                        onEditRefuel = { recordId ->
+                            refuelsViewModel.onEvent(RefuelsUiEvent.StartEditing(recordId))
+                            appViewModel.onEvent(AppUiEvent.SetQuickRefuelVisible(true))
+                        }
                     )
                 }
 
@@ -477,7 +501,10 @@ fun TecMotorsRoot(
             QuickRefuelSheet(
                 state = refuelsState,
                 onEvent = refuelsViewModel::onEvent,
-                onDismiss = { appViewModel.onEvent(AppUiEvent.SetQuickRefuelVisible(false)) }
+                onDismiss = {
+                    refuelsViewModel.onEvent(RefuelsUiEvent.DiscardQuickRefuel)
+                    appViewModel.onEvent(AppUiEvent.SetQuickRefuelVisible(false))
+                }
             )
         }
     }

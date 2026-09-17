@@ -72,6 +72,9 @@ interface FuelDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun upsert(entity: FuelRecordEntity)
 
+    @Query("DELETE FROM fuel_records WHERE id = :recordId")
+    suspend fun deleteById(recordId: Long)
+
     @Query("SELECT MAX(id) FROM fuel_records")
     suspend fun maxId(): Long?
 }

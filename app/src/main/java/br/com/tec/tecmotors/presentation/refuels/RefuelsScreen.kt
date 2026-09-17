@@ -1,5 +1,6 @@
 package br.com.tec.tecmotors.presentation.refuels
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -44,7 +45,8 @@ import br.com.tec.tecmotors.presentation.common.formatNumber
 @Composable
 fun RefuelsScreen(
     state: RefuelsUiState,
-    onEvent: (RefuelsUiEvent) -> Unit
+    onEvent: (RefuelsUiEvent) -> Unit,
+    onEditRefuel: (Long) -> Unit
 ) {
     val records = state.fuelRecords
         .filter { it.vehicleId == state.selectedVehicleId }
@@ -130,7 +132,9 @@ fun RefuelsScreen(
         } else {
             records.forEach { record ->
                 Card(
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { onEditRefuel(record.id) },
                     shape = RoundedCornerShape(12.dp),
                     colors = CardDefaults.cardColors(
                         containerColor = MaterialTheme.colorScheme.surface

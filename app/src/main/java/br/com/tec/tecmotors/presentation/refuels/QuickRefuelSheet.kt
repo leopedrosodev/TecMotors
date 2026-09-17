@@ -95,11 +95,33 @@ fun QuickRefuelSheet(
                 .padding(bottom = 20.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            Text(
-                text = stringResource(R.string.quick_refuel_title),
-                style = MaterialTheme.typography.headlineSmall,
-                fontWeight = FontWeight.Bold
-            )
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    text = if (state.isEditing) {
+                        stringResource(R.string.quick_refuel_title_edit)
+                    } else {
+                        stringResource(R.string.quick_refuel_title)
+                    },
+                    style = MaterialTheme.typography.headlineSmall,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.weight(1f)
+                )
+                if (state.isEditing) {
+                    TextButton(
+                        onClick = {
+                            state.editingRecordId?.let {
+                                onEvent(RefuelsUiEvent.DeleteRefuel(it))
+                            }
+                            onDismiss()
+                        }
+                    ) {
+                        Text(
+                            text = stringResource(R.string.action_delete),
+                            color = MaterialTheme.colorScheme.error
+                        )
+                    }
+                }
+            }
 
             if (state.vehicles.size > 1) {
                 Row(
@@ -282,7 +304,11 @@ fun QuickRefuelSheet(
                 enabled = state.quickEntryReady
             ) {
                 Text(
-                    text = stringResource(R.string.action_save_refuel),
+                    text = if (state.isEditing) {
+                        stringResource(R.string.action_save_changes)
+                    } else {
+                        stringResource(R.string.action_save_refuel)
+                    },
                     style = MaterialTheme.typography.titleMedium,
                     modifier = Modifier.padding(vertical = 6.dp)
                 )

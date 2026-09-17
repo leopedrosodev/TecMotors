@@ -30,3 +30,31 @@ class AddRefuelUseCase(private val repository: RefuelRepository) {
         )
     }
 }
+
+class UpdateRefuelUseCase(private val repository: RefuelRepository) {
+    suspend operator fun invoke(
+        recordId: Long,
+        vehicleId: Long,
+        dateEpochDay: Long,
+        odometerKm: Double,
+        liters: Double,
+        pricePerLiter: Double,
+        stationName: String,
+        usageType: FuelUsageType,
+        receiptImageUri: String?
+    ) = repository.updateRefuel(
+        recordId = recordId,
+        vehicleId = vehicleId,
+        dateEpochDay = dateEpochDay,
+        odometerKm = odometerKm,
+        liters = liters,
+        pricePerLiter = pricePerLiter,
+        stationName = stationName,
+        usageType = usageType,
+        receiptImageUri = receiptImageUri
+    )
+}
+
+class DeleteRefuelUseCase(private val repository: RefuelRepository) {
+    suspend operator fun invoke(recordId: Long) = repository.deleteRefuel(recordId)
+}

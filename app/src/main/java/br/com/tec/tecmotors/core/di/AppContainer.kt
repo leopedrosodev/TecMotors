@@ -34,6 +34,7 @@ import br.com.tec.tecmotors.domain.usecase.CalculatePeriodReportUseCase
 import br.com.tec.tecmotors.domain.usecase.CalculateVehicleSummaryUseCase
 import br.com.tec.tecmotors.domain.usecase.CurrentSyncUserUseCase
 import br.com.tec.tecmotors.domain.usecase.DecideRemindersUseCase
+import br.com.tec.tecmotors.domain.usecase.DeleteRefuelUseCase
 import br.com.tec.tecmotors.domain.usecase.DownloadRemoteStateUseCase
 import br.com.tec.tecmotors.domain.usecase.EnsureDefaultVehiclesUseCase
 import br.com.tec.tecmotors.domain.usecase.GetLocalSnapshotUseCase
@@ -52,6 +53,7 @@ import br.com.tec.tecmotors.domain.usecase.SetMonthlyBudgetUseCase
 import br.com.tec.tecmotors.domain.usecase.SignInWithGoogleUseCase
 import br.com.tec.tecmotors.domain.usecase.SignOutUseCase
 import br.com.tec.tecmotors.domain.usecase.SyncNowUseCase
+import br.com.tec.tecmotors.domain.usecase.UpdateRefuelUseCase
 import br.com.tec.tecmotors.domain.usecase.UploadLocalStateUseCase
 
 class AppContainer(context: Context) {
@@ -119,6 +121,8 @@ class AppContainer(context: Context) {
 
     val observeRefuelsUseCase = ObserveRefuelsUseCase(refuelRepository)
     val addRefuelUseCase = AddRefuelUseCase(refuelRepository)
+    val updateRefuelUseCase = UpdateRefuelUseCase(refuelRepository)
+    val deleteRefuelUseCase = DeleteRefuelUseCase(refuelRepository)
 
     val observeMaintenanceUseCase = ObserveMaintenanceUseCase(maintenanceRepository)
     val addMaintenanceUseCase = AddMaintenanceUseCase(maintenanceRepository)
